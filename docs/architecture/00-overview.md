@@ -61,6 +61,7 @@ Claude Code 是 Anthropic 官方推出的 CLI 工具，允许开发者在终端�
 ```mermaid
 graph TD
     subgraph USER_INPUT["👤 用户入口"]
+        direction LR
         TERM["用户终端<br/>stdin/stdout"]
         WEB["claude.ai Web"]
         IDE["IDE (VS Code等)"]
@@ -68,6 +69,7 @@ graph TD
     end
 
     subgraph ENTRY["🚪 入口层 (Entrypoints)"]
+        direction LR
         CLI["CLI 入口<br/>cli.tsx"]
         BRIDGE["Bridge API<br/>bridgeMain"]
         MCPS["MCP Server<br/>mcp.ts"]
@@ -89,23 +91,26 @@ graph TD
         INIT["init() 全局初始化<br/>配置/网络/遥测<br/>CA/代理/MDM"]
         SETUP["setup() 会话初始化<br/>cwd/hooks/worktree<br/>后台任务/预取"]
         CMD --> INIT --> SETUP
-        SETUP --> INTERACTIVE["交互模式<br/>(REPL 启动)"]
-        SETUP --> HEADLESS["非交互模式 (-p)<br/>runHeadless()"]
+        subgraph MODES["启动模式"]
+            direction LR
+            INTERACTIVE["交互模式<br/>(REPL 启动)"]
+            HEADLESS["非交互模式 (-p)<br/>runHeadless()"]
+        end
+        SETUP --> MODES
     end
 
-    INTERACTIVE --> ENGINE
-    HEADLESS --> ENGINE
-
     subgraph ENGINE["🧠 核心引擎层 (Core Engine)"]
+        direction LR
         QE["QueryEngine<br/>submitMessage()<br/>会话生命周期管理<br/>token/cost 累计<br/>消息历史维护"]
-        QUERY["query() 对话循环<br/>while (true):<br/>  snipCompact<br/>  microcompact<br/>  contextCollapse<br/>  autoCompact<br/>  callModel()<br/>  runTools()<br/>  stopHooks()<br/>  attachments"]
-        CTXMGR["上下文管理<br/>System Prompt<br/>CLAUDE.md 记忆<br/>Git 状态上下文<br/>环境信息"]
+        QUERY["query() 对话循环<br/>while (true):<br/>  snipCompact / microcompact<br/>  contextCollapse / autoCompact<br/>  callModel() / runTools()<br/>  stopHooks() / attachments"]
+        CTXMGR["上下文管理<br/>System Prompt / CLAUDE.md<br/>Git 状态 / 环境信息"]
         COORD["Coordinator 模式<br/>Leader + Workers<br/>Scratchpad 共享"]
 
         QE -->|"submitMessage()"| QUERY
         CTXMGR -->|"注入上下文"| QUERY
     end
 
+    MODES --> ENGINE
     ENGINE -->|"callModel()"| API_LAYER
     ENGINE -->|"runTools()"| TOOL_LAYER
 ```
@@ -115,43 +120,46 @@ graph TD
 ```mermaid
 graph TD
     subgraph API_LAYER["📡 API 通信层 (API Service)"]
-        CLIENT["client.ts<br/>Anthropic SDK<br/>多提供商支持:<br/>Anthropic 直连 / AWS Bedrock<br/>Google Vertex / Azure Foundry<br/>Claude.ai"]
-        CLAUDE["claude.ts<br/>流式查询核心 (3400+ 行)<br/>prompt 缓存 / 努力度调节<br/>advisor 模式"]
-        RETRY["withRetry.ts<br/>10次重试 / 529特殊处理<br/>OAuth刷新 / 模型回退"]
+        direction LR
+        CLIENT["client.ts -- Anthropic SDK<br/>多提供商: 直连/Bedrock/Vertex/Foundry/Claude.ai"]
+        CLAUDE["claude.ts -- 流式查询核心 (3400+ 行)<br/>prompt 缓存 / 努力度调节 / advisor 模式"]
+        RETRY["withRetry.ts<br/>10次重试 / 529处理<br/>OAuth刷新 / 模型回退"]
         COST["成本追踪<br/>cost-tracker.ts<br/>按模型累计token"]
     end
 
-    subgraph TOOL_LAYER["🔧 工具执行层 (Tool System)"]
+    subgraph TOOL_EXEC["🔧 工具执行层 (Tool System)"]
+        direction LR
         ORCH["toolOrchestration.ts<br/>partitionToolCalls()<br/>并发/串行批次"]
         EXEC["toolExecution.ts<br/>Zod验证 → PreToolUse Hook<br/>→ 权限检查 → tool.call()<br/>→ PostToolUse Hook → 结果"]
-        STREAM_EXEC["StreamingToolExecutor<br/>流式响应中即时启动工具执行"]
-
+        STREAM_EXEC["StreamingToolExecutor<br/>流式响应中即时启动"]
         ORCH --> EXEC --> STREAM_EXEC
+    end
 
-        subgraph TOOLS_IMPL["具体工具实现 (src/tools/)"]
+    TOOL_EXEC --> TOOLS_IMPL
+
+    subgraph TOOLS_IMPL["🧰 具体工具实现 (src/tools/)"]
+        subgraph FILE_OPS["核心文件操作"]
             direction LR
-            subgraph FILE_OPS["核心文件操作"]
-                BASH["Bash -- Shell 命令"]
-                READ["Read -- 文件/图片/PDF"]
-                EDIT_T["Edit -- 精确替换编辑"]
-                WRITE_T["Write -- 文件创建/覆写"]
-                GLOBGREP["Glob/Grep -- 文件搜索"]
-            end
-            subgraph AGENT_OPS["代理/任务"]
-                AGENT["Agent -- 子代理"]
-                SENDMSG["SendMessage"]
-                TASKMGMT["TaskCreate/Get/Update/Stop"]
-            end
-            subgraph NET_OPS["网络/外部"]
-                WEBFETCH["WebFetch -- HTTP 请求"]
-                WEBSEARCH["WebSearch -- 网络搜索"]
-                MCPTOOL["MCPTool -- MCP 远程工具"]
-                TOOLSEARCH["ToolSearch -- 延迟工具发现"]
-                SKILL["Skill -- 技能执行"]
-            end
+            BASH["Bash -- Shell 命令"]
+            READ["Read -- 文件/图片/PDF"]
+            EDIT_T["Edit -- 精确替换编辑"]
+            WRITE_T["Write -- 文件创建/覆写"]
+            GLOBGREP["Glob/Grep -- 文件搜索"]
         end
-
-        STREAM_EXEC --> TOOLS_IMPL
+        subgraph AGENT_OPS["代理/任务"]
+            direction LR
+            AGENT["Agent -- 子代理"]
+            SENDMSG["SendMessage"]
+            TASKMGMT["TaskCreate/Get/Update/Stop"]
+        end
+        subgraph NET_OPS["网络/外部"]
+            direction LR
+            WEBFETCH["WebFetch -- HTTP"]
+            WEBSEARCH["WebSearch -- 搜索"]
+            MCPTOOL["MCPTool -- MCP"]
+            TOOLSEARCH["ToolSearch -- 延迟发现"]
+            SKILL["Skill -- 技能执行"]
+        end
     end
 ```
 
@@ -159,8 +167,9 @@ graph TD
 
 ```mermaid
 graph TD
-    subgraph UI_LAYER["🖥️ 终端 UI 层 (Terminal UI)"]
+    subgraph UI_LAYER_A["🖥️ 终端 UI 层 -- 渲染引擎与组件树"]
         subgraph INK_ENGINE["自定义 Ink 渲染引擎"]
+            direction LR
             REACT19["React 19"]
             RECONCILER["react-reconciler"]
             DOM_TREE["自定义 DOM 树"]
@@ -169,52 +178,72 @@ graph TD
             LOGUPDATE["LogUpdate 差异更新<br/>(双缓冲 + 16ms 节流)"]
             ANSI_OUT["ANSI 终端输出"]
 
-            REACT19 --> RECONCILER --> DOM_TREE --> YOGA --> SCREEN_BUF --> LOGUPDATE --> ANSI_OUT
+            REACT19 --> RECONCILER --> DOM_TREE --> YOGA
+            SCREEN_BUF --> LOGUPDATE --> ANSI_OUT
         end
 
-        subgraph COMPONENT_TREE["React 组件树"]
+        YOGA --> SCREEN_BUF
+
+        subgraph COMPONENT_TOP["组件树顶层"]
+            direction LR
             APP["App"]
             APPSTATE_P["AppStateProvider"]
             KEYBINDING["KeybindingSetup"]
             REPL["REPL (5000+ 行, 核心屏幕)"]
-            ALTSCREEN["AlternateScreen"]
-            FULLSCREEN["FullscreenLayout"]
+            APP --> APPSTATE_P --> KEYBINDING --> REPL
+        end
+
+        REPL --> ALTSCREEN["AlternateScreen"] --> FULLSCREEN["FullscreenLayout"]
+    end
+```
+
+以下继续展示 FullscreenLayout 之下的组件结构、设计系统与消息渲染管线：
+
+```mermaid
+graph TD
+    FULLSCREEN["FullscreenLayout"]
+
+    subgraph UI_LAYER_B["🖥️ 终端 UI 层 -- 消息区域与辅助系统"]
+        subgraph MSG_AREA["消息展示区域"]
             SCROLLBOX["ScrollBox (虚拟滚动)"]
             VMSGLIST["VirtualMessageList"]
-            MSGS["Message x N"]
-            ASSTTEXT["AssistantTextMessage"]
-            ASSTTOOL["AssistantToolUseMessage"]
-            USERTEXT["UserTextMessage"]
-            PERMREQ["PermissionRequest"]
+            subgraph MSG_TYPES["消息类型"]
+                direction LR
+                ASSTTEXT["AssistantTextMessage"]
+                ASSTTOOL["AssistantToolUseMessage"]
+                USERTEXT["UserTextMessage"]
+                PERMREQ["PermissionRequest"]
+            end
+            SCROLLBOX --> VMSGLIST --> MSG_TYPES
+        end
+
+        subgraph INPUT_AREA["输入与通知"]
+            direction LR
             PROMPTINPUT["PromptInput"]
             TEXTINPUT["TextInput / VimTextInput"]
             NOTIFICATIONS["Notifications"]
             MODAL["Modal (对话框/命令面板)"]
-
-            APP --> APPSTATE_P --> KEYBINDING --> REPL --> ALTSCREEN --> FULLSCREEN
-            FULLSCREEN --> SCROLLBOX --> VMSGLIST --> MSGS
-            MSGS --> ASSTTEXT
-            MSGS --> ASSTTOOL
-            MSGS --> USERTEXT
-            MSGS --> PERMREQ
-            FULLSCREEN --> PROMPTINPUT --> TEXTINPUT
-            FULLSCREEN --> NOTIFICATIONS
-            FULLSCREEN --> MODAL
+            PROMPTINPUT --> TEXTINPUT
         end
 
         subgraph DESIGN_SYS["设计系统"]
+            direction LR
             THEMED["ThemedBox / ThemedText"]
             DIALOG["Dialog / Pane / Tabs"]
             FUZZY["FuzzyPicker / ProgressBar"]
         end
 
         subgraph MSG_PIPELINE["消息渲染管线"]
+            direction LR
             NORMALIZE["messages → normalize → reorder"]
             COLLAPSE["→ collapse → group → VirtualMessageList"]
             HIGHLIGHT["Markdown → Token LRU → HighlightedCode"]
             NORMALIZE --> COLLAPSE --> HIGHLIGHT
         end
     end
+
+    FULLSCREEN --> MSG_AREA
+    FULLSCREEN --> INPUT_AREA
 ```
 
 <!-- 整体架构全景图 -- 第 4 部分: 服务层 + 状态与安全层 + 特殊功能层 -->
@@ -222,46 +251,72 @@ graph TD
 ```mermaid
 graph TD
     subgraph SVC_LAYER["🔌 服务层 (Services Layer)"]
-        direction LR
-        SVC_API["API 通信<br/>client.ts / claude.ts<br/>withRetry.ts"]
-        SVC_MCP["MCP 协议<br/>client.ts / config.ts<br/>auth.ts / 7种传输"]
-        SVC_OAUTH["OAuth 认证<br/>index.ts / client.ts<br/>crypto.ts / PKCE 流程"]
-        SVC_ANALYTICS["分析遥测<br/>index.ts / growthbook<br/>datadog / sink.ts"]
-        SVC_COMPACT["上下文压缩<br/>compact.ts / microCompact.ts<br/>autoCompact.ts / contextCollapse"]
-        SVC_MEM["记忆服务<br/>extract / sessionMem<br/>teamMem"]
-        SVC_LSP["LSP 服务<br/>manager / server<br/>client"]
-        SVC_PLUGIN["插件服务<br/>install / operations"]
-        SVC_TIPS["提示服务<br/>tipReg / tipSched"]
-        SVC_SYNC["设置同步<br/>settingsSync<br/>remoteManagedSet<br/>policyLimits"]
+        subgraph SVC_ROW1["核心通信服务"]
+            direction LR
+            SVC_API["API 通信<br/>client.ts / claude.ts<br/>withRetry.ts"]
+            SVC_MCP["MCP 协议<br/>client.ts / config.ts<br/>auth.ts / 7种传输"]
+            SVC_OAUTH["OAuth 认证<br/>index.ts / client.ts<br/>crypto.ts / PKCE 流程"]
+            SVC_ANALYTICS["分析遥测<br/>index.ts / growthbook<br/>datadog / sink.ts"]
+            SVC_COMPACT["上下文压缩<br/>compact.ts / microCompact.ts<br/>autoCompact.ts / contextCollapse"]
+        end
+        subgraph SVC_ROW2["扩展服务"]
+            direction LR
+            SVC_MEM["记忆服务<br/>extract / sessionMem<br/>teamMem"]
+            SVC_LSP["LSP 服务<br/>manager / server<br/>client"]
+            SVC_PLUGIN["插件服务<br/>install / operations"]
+            SVC_TIPS["提示服务<br/>tipReg / tipSched"]
+            SVC_SYNC["设置同步<br/>settingsSync<br/>remoteManagedSet<br/>policyLimits"]
+        end
     end
 
+    SVC_LAYER --> STATE_LAYER
+```
+
+以下继续展示状态与安全层以及特殊功能层的详细结构：
+
+```mermaid
+graph TD
     subgraph STATE_LAYER["🔒 状态与安全层 (State & Security)"]
-        STORE["AppState Store<br/>自研响应式 Store<br/>不可变更新 / 发布-订阅<br/>React 集成 (useSyncExternal)"]
-        PERM["权限系统<br/>6种模式: default/plan/<br/>acceptEdits/bypassPermissions/<br/>dontAsk/auto<br/>多源规则: user/project/<br/>policy/session/cliArg<br/>YOLO 分类器 / 拒绝追踪与回退"]
-        HOOKS["Hooks 系统<br/>27种事件: PreToolUse /<br/>PostToolUse / Stop /<br/>Notification / SessionStart/End /<br/>FileChanged...<br/>4种类型: command/prompt/<br/>http/agent"]
-        TASK["Task 系统<br/>7种任务类型:<br/>local_bash / local_agent /<br/>remote_agent / in_process_mate /<br/>local_workflow / monitor_mcp /<br/>dream"]
-        SANDBOX["沙箱安全<br/>文件系统限制<br/>网络域名限制<br/>settings.json 保护"]
-        PLUGINS["插件系统<br/>builtin + marketplace<br/>MCP/LSP/Hooks 扩展"]
-        SKILLS["Skills 系统<br/>bundled/disk/<br/>plugin/MCP<br/>Frontmatter 语法"]
-        GLOBAL_STATE["全局可变状态<br/>bootstrap/state.ts<br/>sessionId/cwd/<br/>cost/meter/hooks"]
-        MEMDIR["记忆系统 (Memdir)<br/>MEMORY.md 索引<br/>四类记忆分类<br/>智能检索 (sideQuery)"]
+        subgraph STATE_ROW1["状态管理"]
+            direction LR
+            STORE["AppState Store<br/>自研响应式 Store<br/>不可变更新 / 发布-订阅<br/>React 集成 (useSyncExternal)"]
+            GLOBAL_STATE["全局可变状态<br/>bootstrap/state.ts<br/>sessionId/cwd/<br/>cost/meter/hooks"]
+            TASK["Task 系统<br/>7种任务类型:<br/>local_bash / local_agent /<br/>remote_agent / in_process_mate /<br/>local_workflow / monitor_mcp / dream"]
+        end
+        subgraph STATE_ROW2["安全与扩展"]
+            direction LR
+            PERM["权限系统<br/>6种模式 / 多源规则<br/>YOLO 分类器 / 拒绝追踪"]
+            HOOKS["Hooks 系统<br/>27种事件 / 4种类型<br/>command/prompt/http/agent"]
+            SANDBOX["沙箱安全<br/>文件系统限制<br/>网络域名限制<br/>settings.json 保护"]
+        end
+        subgraph STATE_ROW3["插件与记忆"]
+            direction LR
+            PLUGINS["插件系统<br/>builtin + marketplace<br/>MCP/LSP/Hooks 扩展"]
+            SKILLS["Skills 系统<br/>bundled/disk/plugin/MCP<br/>Frontmatter 语法"]
+            MEMDIR["记忆系统 (Memdir)<br/>MEMORY.md 索引<br/>四类记忆分类<br/>智能检索 (sideQuery)"]
+        end
     end
 
     subgraph SPECIAL["⚡ 特殊功能层 (Special Features)"]
-        direction LR
-        VOICE["语音交互<br/>CoreAudio / WebSocket<br/>三层门控"]
-        REMOTE["远程Agent<br/>CCR 会话 / WebSocket<br/>HTTP POST"]
-        IDE_BRIDGE["IDE 桥接<br/>Remote Control<br/>REST API"]
-        SERVER["Server<br/>Direct Connect<br/>HTTP/WS"]
-        BUDDY["Buddy<br/>伴侣系统 / 确定性生成<br/>RPG 属性"]
-        GIT["Git 集成<br/>直读.git / ref 解析<br/>watcher"]
-        UPSTREAM["上游代理<br/>CONNECT over WS<br/>prctl 防调"]
-        NATIVE_TS["原生 TS<br/>file-index / yoga-layout<br/>color-diff"]
-        BASH_PARSE["Bash 解析<br/>递归下降 / 安全分析<br/>AST 遍历"]
-        BUILD["构建系统<br/>Bun/esbuild<br/>feature() / 死代码消除"]
+        subgraph SPEC_ROW1["交互与远程"]
+            direction LR
+            VOICE["语音交互<br/>CoreAudio / WebSocket<br/>三层门控"]
+            REMOTE["远程Agent<br/>CCR 会话 / WebSocket<br/>HTTP POST"]
+            IDE_BRIDGE["IDE 桥接<br/>Remote Control / REST API"]
+            SERVER["Server<br/>Direct Connect / HTTP/WS"]
+        end
+        subgraph SPEC_ROW2["基础设施"]
+            direction LR
+            BUDDY["Buddy<br/>伴侣系统 / 确定性生成<br/>RPG 属性"]
+            GIT["Git 集成<br/>直读.git / ref 解析<br/>watcher"]
+            UPSTREAM["上游代理<br/>CONNECT over WS<br/>prctl 防调"]
+            NATIVE_TS["原生 TS<br/>file-index / yoga-layout<br/>color-diff"]
+            BASH_PARSE["Bash 解析<br/>递归下降 / 安全分析"]
+            BUILD["构建系统<br/>Bun/esbuild / feature()"]
+        end
     end
 
-    SVC_LAYER --> STATE_LAYER --> SPECIAL
+    STATE_LAYER --> SPECIAL
 ```
 
 ---
@@ -276,50 +331,71 @@ graph TD
 graph TD
     START(["👤 用户在终端键入文本并按 Enter"])
 
-    STEP1["[1] 终端输入捕获<br/>parseKeypress() 解析 ANSI 转义序列"]
-    STEP2["[2] 事件分发<br/>Ink Dispatcher 分发 KeyboardEvent<br/>(捕获/冒泡)"]
-    STEP3["[3] TextInput 处理<br/>TextInput/VimTextInput 组件接收按键<br/>(粘贴检测 / 图片粘贴 / 历史导航 / 命令补全)"]
-    STEP4["[4] 输入提交<br/>PromptInput.onSubmit() 触发<br/>REPL 组件接收用户消息"]
-    STEP5["[5] QueryEngine.submitMessage()<br/>submitMessage(prompt, options)<br/>discoveredSkillNames.clear()<br/>setCwd(cwd)<br/>解析模型和思考配置"]
-    STEP6["[6] 系统提示词构建<br/>fetchSystemPromptParts()<br/>getSystemPrompt() -- 角色描述/工具说明/环境信息<br/>getUserContext() -- CLAUDE.md 内容/当前日期<br/>getSystemContext() -- Git 分支/状态/最近提交<br/>coordinator 上下文注入 (如启用)<br/>memory-mechanics 提示注入 (如需要)"]
-    STEP7["[7] 用户输入处理<br/>processUserInput()"]
+    subgraph INPUT_PHASE["输入捕获与处理 (步骤 1-4)"]
+        direction LR
+        STEP1["[1] 终端输入捕获<br/>parseKeypress() 解析 ANSI 转义序列"]
+        STEP2["[2] 事件分发<br/>Ink Dispatcher 分发 KeyboardEvent<br/>(捕获/冒泡)"]
+        STEP3["[3] TextInput 处理<br/>TextInput/VimTextInput 组件接收按键<br/>(粘贴检测/图片/历史/补全)"]
+        STEP4["[4] 输入提交<br/>PromptInput.onSubmit() 触发<br/>REPL 组件接收用户消息"]
+        STEP1 --> STEP2 --> STEP3 --> STEP4
+    end
+
+    START --> INPUT_PHASE
+
+    STEP5["[5] QueryEngine.submitMessage()<br/>discoveredSkillNames.clear() / setCwd(cwd)<br/>解析模型和思考配置"]
+    STEP6["[6] 系统提示词构建<br/>getSystemPrompt() / getUserContext() / getSystemContext()<br/>coordinator + memory-mechanics 注入"]
+    STEP7["[7] 用户输入处理 processUserInput()"]
+
+    STEP4 --> STEP5 --> STEP6 --> STEP7
+
     STEP7_SLASH{"斜杠命令?"}
     STEP7_LOCAL["本地命令 → 直接执行, return"]
     STEP7_PROMPT["Prompt 命令 → 生成内容注入对话"]
-    STEP7_MSG["构建 UserMessage<br/>(文本 + 图片 + 粘贴内容)"]
-    STEP8["[8] 持久化 & 确认<br/>recordTranscript() 写入会话存储<br/>flushSessionStorage() 急切刷新<br/>yield buildSystemInitMessage()"]
+    STEP7_MSG["构建 UserMessage (文本+图片+粘贴内容)"]
 
-    START --> STEP1 --> STEP2 --> STEP3 --> STEP4 --> STEP5 --> STEP6 --> STEP7
     STEP7 --> STEP7_SLASH
     STEP7_SLASH -->|"是"| STEP7_LOCAL
     STEP7_SLASH -->|"Prompt 类型"| STEP7_PROMPT
     STEP7_SLASH -->|"否"| STEP7_MSG
     STEP7_PROMPT --> STEP7_MSG
+
+    STEP8["[8] 持久化 & 确认<br/>recordTranscript() / flushSessionStorage()<br/>yield buildSystemInitMessage()"]
     STEP7_MSG --> STEP8
+    STEP8 --> STEP9["[9] 进入 query() 循环 -- queryLoop() while (true)"]
+```
 
-    STEP9["[9] 进入 query() 循环<br/>queryLoop() -- while (true)"]
+以下继续展示 query() 循环内部的处理流程直到 AI 响应返回给用户：
 
-    STEP8 --> STEP9
+```mermaid
+graph TD
+    STEP9["[9] query() 循环入口"]
 
     subgraph LOOP["🔄 单次循环迭代"]
-        direction TB
-        A["A. 预处理<br/>snipCompact (历史裁剪)<br/>microcompact (移除冗余工具结果)<br/>contextCollapse (渐进式折叠)<br/>autoCompact (超阈值时触发压缩)"]
-        B["B. API 调用<br/>appendSystemContext(systemPrompt)<br/>prependUserContext(messages)<br/>queryModelWithStreaming()<br/>getAnthropicClient()<br/>anthropic.beta.messages.stream(...)<br/>withRetry() 重试包装<br/>流式返回 StreamEvent"]
+        subgraph PREP_AND_CALL["预处理与 API 调用"]
+            direction LR
+            A["A. 预处理<br/>snipCompact / microcompact<br/>contextCollapse / autoCompact"]
+            B["B. API 调用<br/>queryModelWithStreaming()<br/>withRetry() 重试包装<br/>流式返回 StreamEvent"]
+            A --> B
+        end
         C["C. 响应处理<br/>assistant 消息 → yield 给调用方<br/>tool_use blocks → 收集<br/>StreamingToolExecutor 即时启动"]
-        D["D. 工具执行 (如有 tool_use)<br/>toolOrchestration.runTools()<br/>partitionToolCalls()<br/>并发安全工具 → 并行执行 (≤10)<br/>非并发工具 → 串行执行"]
-        D_EACH["每个工具执行:<br/>Zod 输入验证 → PreToolUse Hook<br/>→ 权限检查 (规则/分类器/交互)<br/>→ tool.call() 实际执行<br/>→ PostToolUse Hook<br/>→ 结果映射 + 大结果存盘"]
-        E["E. 后处理<br/>handleStopHooks()<br/>checkTokenBudget()<br/>getAttachmentMessages()<br/>maxTurns 检查"]
+        subgraph TOOL_RUN["工具执行"]
+            direction LR
+            D["D. 工具调度<br/>partitionToolCalls()<br/>并发安全 → 并行 (≤10)<br/>非并发 → 串行"]
+            D_EACH["每个工具执行:<br/>Zod验证 → PreToolUse Hook<br/>→ 权限检查 → tool.call()<br/>→ PostToolUse Hook → 结果"]
+            D --> D_EACH
+        end
+        E["E. 后处理<br/>handleStopHooks() / checkTokenBudget()<br/>getAttachmentMessages() / maxTurns"]
         F{"F. 继续决策"}
 
-        A --> B --> C --> D --> D_EACH --> E --> F
+        PREP_AND_CALL --> C --> TOOL_RUN --> E --> F
     end
 
     STEP9 --> LOOP
-    F -->|"有 tool_use → 继续循环"| A
-    F -->|"无 tool_use → return completed"| STEP10
+    F -->|"有 tool_use → 继续循环"| PREP_AND_CALL
+    F -->|"无 tool_use → return"| STEP10
 
-    STEP10["[10] 结果收集<br/>addToTotalSessionCost() 成本累计<br/>recordTranscript() 转录持久化<br/>yield type:result, subtype:success"]
-    STEP11["[11] UI 渲染<br/>REPL 组件接收 SDKMessage<br/>normalizeMessages() → reorderMessagesInUI()<br/>VirtualMessageList 虚拟滚动渲染<br/>AssistantTextMessage Markdown 渲染<br/>AssistantToolUseMessage 工具调用展示<br/>LogUpdate.diff() → ANSI 差异更新到终端"]
+    STEP10["[10] 结果收集<br/>addToTotalSessionCost() / recordTranscript()<br/>yield type:result, subtype:success"]
+    STEP11["[11] UI 渲染<br/>normalizeMessages() → VirtualMessageList<br/>Markdown 渲染 → LogUpdate.diff() → ANSI 输出"]
     DONE(["👤 用户在终端看到 AI 响应"])
 
     STEP10 --> STEP11 --> DONE
@@ -373,43 +449,40 @@ graph TD
         CORE["QueryEngine.ts ↔ query.ts ↔ context.ts<br/>cost-tracker.ts / history.ts / query/config.ts"]
     end
 
-    subgraph L3A["📡 API 通信"]
-        API_MOD["api/ / client.ts<br/>claude.ts / withRetry"]
-    end
-
-    subgraph L3B["🔧 工具系统"]
-        TOOL_MOD["Tool.ts / tools.ts<br/>tools/ / toolOrch..<br/>toolExec.."]
-    end
-
-    subgraph L3C["⌨️ 命令系统"]
-        CMD_MOD["commands.ts<br/>commands/ / skills/"]
+    subgraph L3["第3层: 通信 / 工具 / 命令"]
+        direction LR
+        subgraph L3A["📡 API 通信"]
+            API_MOD["api/ / client.ts<br/>claude.ts / withRetry"]
+        end
+        subgraph L3B["🔧 工具系统"]
+            TOOL_MOD["Tool.ts / tools.ts<br/>tools/ / toolOrch / toolExec"]
+        end
+        subgraph L3C["⌨️ 命令系统"]
+            CMD_MOD["commands.ts<br/>commands/ / skills/"]
+        end
     end
 
     subgraph L4["🔌 服务层 (Services)"]
-        SVC_MOD["mcp/ | oauth/ | analytics/ | compact/ | extractMemories/<br/>SessionMemory/ | lsp/ | plugins/ | tips/ | settingsSync/<br/>remoteManagedSettings/ | policyLimits/ | voice.ts"]
+        SVC_MOD["mcp/ | oauth/ | analytics/ | compact/ | extractMemories/<br/>SessionMemory/ | lsp/ | plugins/ | tips/ | settingsSync/ | policyLimits/ | voice.ts"]
     end
 
-    subgraph L5["🔒 状态与安全层 (State & Security)"]
-        STATE_MOD["state/store.ts | state/AppStateStore.ts | Task.ts / tasks/<br/>hooks/ | types/permissions.ts | utils/permissions/<br/>utils/sandbox/ | schemas/hooks.ts"]
-    end
-
-    subgraph L6["🖥️ UI 层 (Terminal UI)"]
-        UI_MOD["ink.ts | ink/ (引擎) | components/ | screens/REPL.tsx<br/>vim/ | keybindings/ | hooks/"]
-    end
-
-    subgraph L7["🏗️ 基础设施层 (Infrastructure)"]
-        INFRA_MOD["bootstrap/state.ts | utils/git/ | utils/bash/ | native-ts/<br/>remote/ | bridge/ | server/ | upstreamproxy/ | memdir/<br/>buddy/ | migrations/"]
+    subgraph BOTTOM["底层"]
+        direction LR
+        subgraph L5["🔒 状态与安全层"]
+            STATE_MOD["state/store.ts | AppStateStore.ts | Task.ts<br/>hooks/ | permissions.ts | sandbox/"]
+        end
+        subgraph L6["🖥️ UI 层"]
+            UI_MOD["ink.ts | ink/ (引擎)<br/>components/ | REPL.tsx<br/>vim/ | keybindings/"]
+        end
+        subgraph L7["🏗️ 基础设施层"]
+            INFRA_MOD["bootstrap/ | utils/git/<br/>utils/bash/ | native-ts/<br/>remote/ | bridge/ | server/"]
+        end
     end
 
     L1 --> L2
-    L2 --> L3A
-    L2 --> L3B
-    L2 --> L3C
-    L3A --> L4
-    L3B --> L4
-    L4 --> L5
-    L5 --> L6
-    L6 --> L7
+    L2 --> L3
+    L3 --> L4
+    L4 --> BOTTOM
 ```
 
 ### 4.2 关键依赖关系说明

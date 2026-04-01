@@ -36,14 +36,18 @@ graph TD
         User -->|走进办公室| Brain
 
         subgraph toolbox["🧰 办公桌上的工具箱"]
-            T1["📁 文件柜<br>读写文件"]
-            T2["💻 终端机<br>执行命令"]
-            T3["🔍 搜索引擎<br>搜索代码"]
-            T4["📝 笔记本<br>记录笔记"]
-            T5["🌐 浏览器<br>上网查资料"]
-            T6["📻 对讲机<br>呼叫助手"]
-            T7["📋 计划板<br>管理任务"]
-            T8["🔌 外接设备<br>第三方插件"]
+            subgraph row1[" "]
+                T1["📁 文件柜<br>读写文件"]
+                T2["💻 终端机<br>执行命令"]
+                T3["🔍 搜索引擎<br>搜索代码"]
+                T4["📝 笔记本<br>记录笔记"]
+            end
+            subgraph row2[" "]
+                T5["🌐 浏览器<br>上网查资料"]
+                T6["📻 对讲机<br>呼叫助手"]
+                T7["📋 计划板<br>管理任务"]
+                T8["🔌 外接设备<br>第三方插件"]
+            end
         end
 
         Brain -->|桌上的工具| toolbox
@@ -65,27 +69,31 @@ Claude Code 就像一间智能办公室——你说需求，AI 助手 Claude 用
 中间经历了一条完整的 "流水线"。就像寄快递一样，包裹经过层层处理才到你手上。
 
 ```mermaid
-graph LR
+graph TD
     subgraph main["一次对话的完整旅程"]
-        S1["1️⃣ 你打字<br>在终端输入<br>问题或指令"]
-        S2["2️⃣ 前台接收<br>检查是命令、<br>问题还是闲聊"]
-        S3["3️⃣ 大脑思考<br>Claude 理解需求<br>想出解决方案"]
-        S4["4️⃣ 挑选工具<br>从工具箱里<br>挑出合适的工具"]
-        S5["5️⃣ 保安审批<br>检查工具<br>是否有权限"]
-        S6["6️⃣ 执行任务<br>改文件、跑命令<br>搜索..."]
-        S7["7️⃣ 整理结果<br>把原始结果<br>加工成易懂的答案"]
-        S8["8️⃣ 回复你<br>格式化后显示<br>在终端屏幕上"]
+        subgraph phase1["📥 接收阶段"]
+            S1["1️⃣ 你打字<br>在终端输入问题或指令"]
+            S2["2️⃣ 前台接收<br>检查是命令、问题还是闲聊"]
+            S1 --> S2
+        end
 
-        S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7 --> S8
+        subgraph phase2["🧠 处理阶段"]
+            S3["3️⃣ 大脑思考<br>Claude 理解需求，想出方案"]
+            S4["4️⃣ 挑选工具<br>从工具箱里挑出合适的工具"]
+            S5["5️⃣ 保安审批<br>检查工具是否有权限"]
+            S6["6️⃣ 执行任务<br>改文件、跑命令、搜索..."]
+            S3 --> S4 --> S5 --> S6
+        end
+
+        subgraph phase3["📤 输出阶段"]
+            S7["7️⃣ 整理结果<br>把原始结果加工成易懂的答案"]
+            S8["8️⃣ 回复你<br>格式化后显示在终端屏幕上"]
+            S7 --> S8
+        end
+
+        phase1 --> phase2 --> phase3
+        S6 -->|还没完成，继续循环| S3
     end
-
-    subgraph loop["🔄 自动循环（任务未完成时）"]
-        L1["大脑思考"] --> L2["挑工具"] --> L3["保安审批"] --> L4["执行任务"]
-    end
-
-    S6 -->|还没完成| L1
-    L4 -->|继续| L1
-    L4 -->|全部完成| S7
 ```
 
 **一句话总结：**
@@ -104,9 +112,9 @@ graph TD
     Title["🧰 Claude Code 的超级工具箱（40+ 种工具）"]
 
     subgraph file["📁 文件工具 — 操作你电脑上的文件"]
-        F1["Read<br>读文件<br>文本/图片/PDF"]
-        F2["Edit<br>改文件<br>精确替换"]
-        F3["Write<br>写文件<br>创建新文件"]
+        F1["Read<br>读文件（文本/图片/PDF）"]
+        F2["Edit<br>改文件（精确替换）"]
+        F3["Write<br>写文件（创建新文件）"]
         F4["NotebookEdit<br>改笔记本"]
     end
 
@@ -115,40 +123,46 @@ graph TD
     end
 
     subgraph search["🔍 搜索工具 — 在代码库中找东西"]
-        S1["Glob<br>按文件名搜索"]
-        S2["Grep<br>按内容搜索"]
-        S3["ToolSearch<br>搜索更多工具"]
-    end
-
-    subgraph agent["🤖 AI 助手工具 — 派遣分身去干活"]
-        A1["Agent<br>创建子助手"]
-        A2["SendMessage<br>给子助手发消息"]
-        A3["TeamCreate<br>创建助手团队"]
-    end
-
-    subgraph web["🌐 网络工具 — 上网找资料"]
-        W1["WebSearch<br>网络搜索"]
-        W2["WebFetch<br>抓取网页内容"]
-    end
-
-    subgraph task["📋 任务管理工具 — 管理待办事项"]
-        K1["TaskCreate<br>建任务"]
-        K2["TaskGet<br>查状态"]
-        K3["TaskUpdate<br>更新进度"]
-        K4["TaskStop<br>终止任务"]
-    end
-
-    subgraph mcp["🔌 外部插件工具 — 连接第三方服务"]
-        M1["MCP 工具<br>模型上下文协议<br>GitHub / 数据库 / Slack / 自定义服务<br>理论上数量无限"]
+        S1["Glob 按文件名搜索"]
+        S2["Grep 按内容搜索"]
+        S3["ToolSearch 搜索更多工具"]
     end
 
     Title --- file
     Title --- terminal
     Title --- search
-    Title --- agent
-    Title --- web
-    Title --- task
-    Title --- mcp
+```
+
+```mermaid
+graph TD
+    Title2["🧰 工具箱（续）"]
+
+    subgraph agent["🤖 AI 助手工具 — 派遣分身去干活"]
+        A1["Agent 创建子助手"]
+        A2["SendMessage 给子助手发消息"]
+        A3["TeamCreate 创建助手团队"]
+    end
+
+    subgraph web["🌐 网络工具 — 上网找资料"]
+        W1["WebSearch 网络搜索"]
+        W2["WebFetch 抓取网页内容"]
+    end
+
+    subgraph task["📋 任务管理工具 — 管理待办事项"]
+        K1["TaskCreate 建任务"]
+        K2["TaskGet 查状态"]
+        K3["TaskUpdate 更新进度"]
+        K4["TaskStop 终止任务"]
+    end
+
+    subgraph mcp["🔌 外部插件工具 — 连接第三方服务"]
+        M1["MCP 工具（模型上下文协议）<br>GitHub / 数据库 / Slack / 自定义服务<br>理论上数量无限"]
+    end
+
+    Title2 --- agent
+    Title2 --- web
+    Title2 --- task
+    Title2 --- mcp
 ```
 
 **一句话总结：**
@@ -163,46 +177,48 @@ AI 的 "记忆" 其实是有限的。
 想象 Claude 的大脑就是一张 **书桌**——桌面大小有限，不能把所有文件都摊开。
 
 ```mermaid
-graph TD
+graph LR
     subgraph desk["🖥️ 书桌（上下文窗口 — AI 一次能看到的信息量有限）"]
         D1["💬 当前对话<br>你刚说的话、AI 的回复"]
         D2["📄 最近的工具结果<br>刚才读的文件、跑的命令"]
         D3["⚙️ 系统指令<br>AI 的行为规则"]
         D4["📊 项目情报<br>Git 状态、环境信息"]
     end
+```
 
-    desk -->|桌面快满了怎么办？四招!| tricks
+桌面快满了怎么办？Claude 有**四大记忆管理策略**：
 
-    subgraph tricks["🧹 四大记忆管理策略"]
-        subgraph t1["招数一：旧文件归档（消息压缩）"]
-            C1["聊天1 + 聊天2 + 聊天3<br>占很大空间"]
-            C2["📋 摘要：之前讨论了 xxx<br>占很小空间"]
-            C1 -->|像写会议纪要| C2
-        end
+```mermaid
+graph LR
+    subgraph t1["招数一：旧文件归档"]
+        C1["聊天1 + 聊天2 + 聊天3<br>占很大空间"]
+        C2["📋 摘要：之前讨论了 xxx<br>占很小空间"]
+        C1 -->|像写会议纪要| C2
+    end
 
-        subgraph t2["招数二：便签 — CLAUDE.md（项目记忆）"]
-            N1["📌 CLAUDE.md<br>这个项目用 TypeScript<br>提交代码前要跑测试<br>不要修改 config.json"]
-        end
+    subgraph t2["招数二：便签 CLAUDE.md"]
+        N1["📌 CLAUDE.md<br>这个项目用 TypeScript<br>提交代码前要跑测试<br>不要修改 config.json"]
+    end
 
-        subgraph t3["招数三：笔记本 — Memory 系统（长期记忆）"]
-            M1["📒 MEMORY.md 索引"]
-            M2["记忆1：项目架构偏好"]
-            M3["记忆2：之前遇到的坑"]
-            M4["记忆3：常用命令"]
-            M1 --> M2
-            M1 --> M3
-            M1 --> M4
-        end
+    subgraph t3["招数三：笔记本 Memory 系统"]
+        M1["📒 MEMORY.md 索引"]
+        M2["记忆1：架构偏好"]
+        M3["记忆2：踩过的坑"]
+        M4["记忆3：常用命令"]
+        M1 --> M2
+        M1 --> M3
+        M1 --> M4
+    end
 
-        subgraph t4["招数四：渐进式清理（六层压缩体系）"]
-            P0["第0步：大文件 → 存抽屉，只留摘要"]
-            P1["第1步：旧聊天 → 直接裁掉"]
-            P2["第2步：旧工具结果 → 只留标题"]
-            P3["第3步：早期对话 → 折叠成摘要"]
-            P4["第4步：对话太长 → AI 写总结，从头开始"]
-            P5["第5步：紧急空间不足 → 强制压缩"]
-            P0 --> P1 --> P2 --> P3 --> P4 --> P5
-        end
+    subgraph t4["招数四：渐进式清理（六层）"]
+        P0["第0步：大文件存抽屉"]
+        P1["第1步：旧聊天裁掉"]
+        P2["第2步：旧结果只留标题"]
+        P3["第3步：早期对话折叠"]
+        P4["第4步：太长则写总结重开"]
+        P5["第5步：紧急强制压缩"]
+        P0 --> P1 --> P2
+        P3 --> P4 --> P5
     end
 ```
 
@@ -228,13 +244,15 @@ graph TD
     end
 
     subgraph layer2["🔎 第2层：审批流程（Hook 拦截）"]
-        H1["Claude 要改文件"]
-        H2["PreToolUse 拦截<br>放行 / 阻止 / 修改"]
-        H3["实际执行改文件"]
-        H4["PostToolUse 拦截<br>检查结果 / 触发后续"]
-        H1 --> H2 --> H3 --> H4
+        H1["Claude 要改文件"] --> H2["PreToolUse 拦截<br>放行 / 阻止 / 修改"]
+        H2 --> H3["实际执行改文件"] --> H4["PostToolUse 拦截<br>检查结果 / 触发后续"]
     end
 
+    layer1 --> layer2
+```
+
+```mermaid
+graph TD
     subgraph layer3["📦 第3层：沙箱隔离（限制活动范围）"]
         S1["📂 文件系统限制<br>只能访问项目目录"]
         S2["🌐 网络限制<br>只能访问指定网址"]
@@ -247,7 +265,7 @@ graph TD
         L3["❌ 错误记录"]
     end
 
-    layer1 --> layer2 --> layer3 --> layer4
+    layer3 --> layer4
 ```
 
 **一句话总结：**
@@ -262,23 +280,25 @@ Claude Code 有四层安全防护——权限模式控制大方向，Hook 拦截
 把大任务拆分给多个 "分身" 同时处理。
 
 ```mermaid
-graph TD
+graph LR
     subgraph team["👥 多 Agent 协作 — 项目团队"]
-        Boss["👔 项目主管 Coordinator<br>不亲自动手<br>分配任务、综合结果"]
-
+        Boss["👔 项目主管 Coordinator<br>分配任务、综合结果"]
+        Explorer["🔍 调研员<br>搜索代码 / 读文档"]
+        Worker["🔧 执行者<br>改代码 / 写文件"]
+        Verifier["✅ 质检员<br>跑测试 / 验证结果"]
         Boss --> Explorer
         Boss --> Worker
         Boss --> Verifier
-
-        Explorer["🔍 调研员 Explorer<br>只看不动 / 搜索代码<br>分析结构 / 读文档"]
-        Worker["🔧 执行者 Worker<br>干实际的活 / 改代码<br>写文件 / 执行命令"]
-        Verifier["✅ 质检员 Verifier<br>检查质量 / 跑测试<br>验证结果 / 报告问题"]
     end
 
     subgraph workflow["📋 典型工作流程"]
-        W1["主管分配任务"] --> W2["调研员调查情况"] --> W3["主管汇总制定方案"] --> W4["执行者实施方案"] --> W5["质检员验收检查"]
+        W1["主管分配"] --> W2["调研员调查"] --> W3["主管汇总"]
+        W3 --> W4["执行者实施"] --> W5["质检员验收"]
     end
+```
 
+```mermaid
+graph LR
     subgraph comm["📡 沟通方式"]
         C1["📨 任务通知<br>干完活自动通知结果"]
         C2["📻 发消息 SendMessage<br>像用对讲机沟通"]
@@ -303,28 +323,28 @@ Claude 可以组建项目团队——主管分配任务，调研员负责看，�
 每次你在终端输入 `claude` 命令启动 Claude Code，就像一家 **餐厅开门营业**：
 
 ```mermaid
-graph LR
+graph TD
     subgraph boot["🍽️ 启动过程 — 餐厅开门营业"]
-        S1["1️⃣ 程序启动<br>🏪 老板到店<br>输入 claude 命令<br>检查启动模式"]
-        S2["2️⃣ 初始化配置<br>💡 开灯开空调<br>读取各层配置<br>初始化网络/认证"]
-        S3["3️⃣ 加载工具<br>🥗 检查食材<br>准备 40+ 种工具<br>连接 MCP 服务器"]
-        S4["4️⃣ 准备界面<br>🍽️ 准备餐具<br>渲染终端界面<br>输入框/语法高亮"]
-        S5["5️⃣ 信任确认<br>📋 挂营业牌<br>你信任这个项目吗？"]
-        S6["6️⃣ 读取记忆<br>📖 新员工培训<br>读取 CLAUDE.md"]
-        S7["7️⃣ 等待输入<br>🚪 等客人进门<br>一切就绪！"]
-
-        S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7
+        S1["1️⃣ 程序启动 🏪<br>老板到店，输入 claude 命令"]
+        S2["2️⃣ 初始化配置 💡<br>开灯开空调，读取各层配置"]
+        S3["3️⃣ 加载工具 🥗<br>检查食材，准备 40+ 种工具"]
+        S4["4️⃣ 准备界面 🍽️<br>准备餐具，渲染终端界面"]
+        S1 --> S2 --> S3 --> S4
+        S5["5️⃣ 信任确认 📋<br>挂营业牌：你信任这个项目吗？"]
+        S6["6️⃣ 读取记忆 📖<br>新员工培训，读取 CLAUDE.md"]
+        S7["7️⃣ 等待输入 🚪<br>等客人进门，一切就绪！"]
+        S4 --> S5 --> S6 --> S7
     end
+```
 
+```mermaid
+graph TD
     subgraph chain["⛓️ 完整流程链（源码文件）"]
-        C1["入口分发<br>cli.tsx"]
-        C2["参数解析<br>main.tsx"]
-        C3["全局初始化<br>init.ts"]
-        C4["会话初始化<br>setup.ts"]
-        C5["信任确认<br>对话框"]
-        C6["REPL 启动<br>交互循环"]
-
-        C1 --> C2 --> C3 --> C4 --> C5 --> C6
+        C1["入口分发 cli.tsx"] --> C2["参数解析 main.tsx"]
+        C2 --> C3["全局初始化 init.ts"]
+        C3 --> C4["会话初始化 setup.ts"]
+        C4 --> C5["信任确认 对话框"]
+        C5 --> C6["REPL 启动 交互循环"]
     end
 ```
 
@@ -369,46 +389,53 @@ graph BT
 Claude Code 不只是一个封闭的工具，它像手机一样有自己的 "应用商店"：
 
 ```mermaid
-graph TD
-    subgraph ecosystem["📱 Claude Code 的 App Store 生态"]
-        subgraph builtin["📦 内置应用 — 出厂自带，开箱即用"]
+graph LR
+    subgraph builtin["📦 内置应用 — 出厂自带"]
+        subgraph row1[" "]
             B1["Bash"]
             B2["Read"]
             B3["Edit"]
             B4["Write"]
             B5["Glob"]
+        end
+        subgraph row2[" "]
             B6["Grep"]
             B7["Agent"]
             B8["WebSearch"]
             B9["WebFetch"]
             B10["TaskCreate"]
-            B11["... 40+ 核心工具"]
         end
-
-        subgraph skills["⚡ 技能包 — 可学习的新能力（Skills）"]
-            SK1["/commit<br>自动提交代码"]
-            SK2["/review-pr<br>自动审查变更"]
-            SK3["/simplify<br>审查并简化代码"]
-            SK4["/loop<br>定期重复执行"]
-            SK5["/schedule<br>设定定时任务"]
-            SK6["... 90+ 斜杠命令"]
-        end
-
-        subgraph plugins["🧩 插件 — 第三方扩展（Plugins）"]
-            PL1["安装后获得新工具、新命令、新配置"]
-            PL2["可带 MCP 服务 / Hook 规则 / 技能包"]
-            PL3["企业可控制允许安装哪些"]
-        end
-
-        subgraph mcps["🔌 MCP 服务 — 外部工具连接器（类似 USB 接口）"]
-            M1["GitHub 服务"]
-            M2["数据库查询"]
-            M3["Slack 发消息"]
-            M4["你自己的服务"]
-        end
-
-        builtin --> skills --> plugins --> mcps
+        B11["... 40+ 核心工具"]
     end
+
+    subgraph skills["⚡ 技能包 — 可学习的新能力"]
+        SK1["/commit 自动提交"]
+        SK2["/review-pr 自动审查"]
+        SK3["/simplify 简化代码"]
+        SK4["/loop 定期执行"]
+        SK5["/schedule 定时任务"]
+        SK6["... 90+ 斜杠命令"]
+    end
+
+    builtin --> skills
+```
+
+```mermaid
+graph LR
+    subgraph plugins["🧩 插件 — 第三方扩展"]
+        PL1["安装后获得新工具、新命令、新配置"]
+        PL2["可带 MCP 服务 / Hook 规则 / 技能包"]
+        PL3["企业可控制允许安装哪些"]
+    end
+
+    subgraph mcps["🔌 MCP 服务 — 外部工具连接器"]
+        M1["GitHub 服务"]
+        M2["数据库查询"]
+        M3["Slack 发消息"]
+        M4["你自己的服务"]
+    end
+
+    plugins --> mcps
 ```
 
 **一句话总结：**
@@ -422,16 +449,17 @@ Claude Code 有四层扩展能力——内置工具开箱即用，技能包提�
 你和 Claude Code 对话产生的数据，从诞生到被再次使用，走过一条完整的生命旅程：
 
 ```mermaid
-graph LR
+graph TD
     subgraph lifecycle["🔄 数据的一生 — 完整生命周期"]
-        A1["1️⃣ 诞生<br>你输入一句话<br>帮我修复这个 bug"]
-        A2["2️⃣ 加工处理<br>输入+系统指令+记忆+环境<br>→ 发送给 Claude API<br>→ 回复+调用工具<br>→ 工具结果再送回<br>→ 最终回复"]
-        A3["3️⃣ 实时呈现<br>打字机效果<br>流式输出到终端"]
-        A4["4️⃣ 历史存档<br>~/.claude/projects/<br>session_xxx.json<br>默认保留 30 天"]
-        A5["5️⃣ 记忆提取<br>自动提取关键信息<br>→ MEMORY.md<br>代码风格/禁止项/流程"]
-        A6["6️⃣ 下次召回<br>读取 CLAUDE.md<br>读取 MEMORY.md<br>智能检索相关记忆<br>不需要你重复说明!"]
+        A1["1️⃣ 诞生 — 你输入一句话：帮我修复这个 bug"]
+        A2["2️⃣ 加工处理 — 输入+系统指令+记忆+环境 → 发送给 Claude API → 最终回复"]
+        A3["3️⃣ 实时呈现 — 打字机效果，流式输出到终端"]
+        A4["4️⃣ 历史存档 — ~/.claude/projects/session_xxx.json，默认保留 30 天"]
+        A5["5️⃣ 记忆提取 — 自动提取关键信息写入 MEMORY.md"]
+        A6["6️⃣ 下次召回 — 读取 CLAUDE.md 和 MEMORY.md，智能检索相关记忆"]
 
-        A1 --> A2 --> A3 --> A4 --> A5 --> A6
+        A1 --> A2 --> A3
+        A3 --> A4 --> A5 --> A6
         A6 -->|新对话开始| A1
     end
 ```

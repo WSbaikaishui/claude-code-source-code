@@ -7,7 +7,7 @@
 ## 简明图解
 
 ```mermaid
-graph LR
+graph TD
     A["🏪 老板到店<br/>cli.tsx"] --> B["💡 开灯空调<br/>init.ts"]
     B --> C["🥬 检查食材<br/>setup.ts"]
     C --> D["👨‍🍳 厨房就位<br/>加载工具"]

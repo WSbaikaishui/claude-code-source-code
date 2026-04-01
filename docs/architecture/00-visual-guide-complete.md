@@ -29,53 +29,32 @@
 ```mermaid
 graph TD
     subgraph L1["🏠 第1层：用户入口 — 你从哪里进来"]
-        TERM["💻 终端窗口<br/>你打字的地方"]
-        WEB["🌐 网页版<br/>浏览器里用"]
-        IDE["📝 编辑器插件<br/>VS Code 等里用"]
-        SDK["🔗 程序接口<br/>其他程序调用它"]
+        TERM["💻 终端窗口<br/>你在命令行打字的地方"]
+        WEB["🌐 网页版<br/>在浏览器里直接使用"]
+        IDE["📝 编辑器插件<br/>VS Code等编辑器内嵌"]
+        SDK["🔗 程序接口<br/>其他程序通过API调用"]
     end
 
     subgraph L2["⚙️ 第2层：开机启动 — 程序自我准备"]
-        CMD["📋 命令解析<br/>理解你输入了什么"]
-        INIT["🔌 全局初始化<br/>加载配置和认证"]
-        SETUP["📂 会话初始化<br/>准备工具和插件"]
+        CMD["📋 命令解析<br/>理解你输入了什么参数"]
+        INIT["🔌 全局初始化<br/>加载六层配置和身份认证"]
+        SETUP["📂 会话初始化<br/>准备工具箱、插件、MCP连接"]
         CMD --> INIT --> SETUP
     end
 
     subgraph L3["🧠 第3层：AI 大脑 — 核心引擎"]
-        QE["🎛️ 对话管理器<br/>管理对话生命周期"]
-        QUERY["🔄 思考循环<br/>思考-执行-检查"]
-        CTX["📚 记忆管理<br/>控制信息可见量"]
-        COORD["👥 团队调度<br/>分配多个小助手"]
+        QE["🎛️ 对话管理器<br/>管理整个对话的生命周期"]
+        QUERY["🔄 思考循环<br/>思考→执行→检查,不断循环"]
+        CTX["📚 记忆管理<br/>控制AI能看到多少信息"]
+        COORD["👥 团队调度<br/>分配多个子AI并行干活"]
         QE --> QUERY
         CTX --> QUERY
     end
 
     subgraph L4["🧰 第4层：AI 的能力 — 它能做什么"]
-        TOOLS["🔧 工具箱<br/>40多种工具"]
-        CMDS["⌨️ 指令系统<br/>90多个快捷命令"]
-        MCP_EXT["🔌 外部连接<br/>第三方工具服务"]
-    end
-
-    subgraph L5["🏗️ 第5层：后勤保障 — 幕后服务"]
-        API_SVC["📡 通信服务<br/>和AI服务器通话"]
-        AUTH["🔑 身份认证<br/>登录和权限验证"]
-        ANALYTICS["📊 数据分析<br/>记录使用情况"]
-        MEM_SVC["🧠 记忆服务<br/>提取和存储记忆"]
-        COMPACT["📦 上下文压缩<br/>长对话变短保关键"]
-    end
-
-    subgraph L6["🔒 第6层：安全与规则 — 保护你的电脑"]
-        PERM["🛡️ 权限系统<br/>控制AI的行为"]
-        SANDBOX["📦 安全沙箱<br/>限制AI活动范围"]
-        HOOKS["🪝 钩子系统<br/>关键操作前后检查"]
-        CONFIG["⚙️ 配置管理<br/>多层设置和管控"]
-    end
-
-    subgraph L7["🖥️ 第7层：界面渲染 — 让你看得舒服"]
-        RENDER["🎨 终端UI引擎<br/>漂亮地显示内容"]
-        MSG_RENDER["💬 消息渲染<br/>对话和代码高亮"]
-        INPUT["⌨️ 输入处理<br/>接收你的打字"]
+        TOOLS["🔧 工具箱<br/>40多种工具,覆盖文件/命令/搜索等"]
+        CMDS["⌨️ 指令系统<br/>90多个斜杠快捷命令"]
+        MCP_EXT["🔌 外部连接<br/>通过MCP协议接入第三方服务"]
     end
 
     TERM --> CMD
@@ -86,16 +65,41 @@ graph TD
     QUERY --> TOOLS
     QUERY --> CMDS
     QUERY --> MCP_EXT
-    TOOLS --> API_SVC
-    TOOLS --> MEM_SVC
+```
+
+上面是 Claude Code 的「前台」——你能感知到的部分。下面是「后台」——幕后支撑和保障。
+
+```mermaid
+graph TD
+    subgraph L5["🏗️ 第5层：后勤保障 — 幕后服务"]
+        API_SVC["📡 通信服务<br/>和Anthropic AI服务器通话"]
+        AUTH["🔑 身份认证<br/>OAuth登录和API密钥验证"]
+        ANALYTICS["📊 数据分析<br/>记录使用情况供改进参考"]
+        MEM_SVC["🧠 记忆服务<br/>自动提取和存储长期记忆"]
+        COMPACT["📦 上下文压缩<br/>长对话智能缩短,保留关键信息"]
+    end
+
+    subgraph L6["🔒 第6层：安全与规则 — 保护你的电脑"]
+        PERM["🛡️ 权限系统<br/>六种模式控制AI的行为边界"]
+        SANDBOX["📦 安全沙箱<br/>限制AI只能在项目目录活动"]
+        HOOKS["🪝 钩子系统<br/>27种事件可在前后插入检查"]
+        CONFIG["⚙️ 配置管理<br/>六层设置层层覆盖,企业最优先"]
+    end
+
+    subgraph L7["🖥️ 第7层：界面渲染 — 让你看得舒服"]
+        RENDER["🎨 终端UI引擎<br/>用Ink/React漂亮地显示内容"]
+        MSG_RENDER["💬 消息渲染<br/>Markdown格式化和代码高亮"]
+        INPUT["⌨️ 输入处理<br/>接收你的打字和快捷键"]
+    end
+
     API_SVC --> PERM
-    PERM --> RENDER
-    COMPACT --> CTX
     AUTH --> API_SVC
     ANALYTICS --> API_SVC
+    COMPACT --> MEM_SVC
     HOOKS --> PERM
     CONFIG --> HOOKS
     SANDBOX --> PERM
+    PERM --> RENDER
     RENDER --> MSG_RENDER --> INPUT
 ```
 
@@ -113,29 +117,36 @@ graph TD
 
 ```mermaid
 graph TD
-    S1["1️⃣ 你在终端打字<br/>输入问题并回车"]
-    S2["2️⃣ 程序接收并解析<br/>是命令还是对话？"]
-    S3{"🔀 判断类型"}
-    S3A["3️⃣ 快捷命令<br/>直接执行,跳到12"]
-    S4["4️⃣ 构建任务说明书<br/>组装AI的系统提示词"]
-    S5["5️⃣ 加载项目记忆<br/>读取CLAUDE.md等"]
-    S6["6️⃣ 发送给AI服务器<br/>通过网络传输"]
-    S7["7️⃣ AI回复<br/>文字和/或工具请求"]
-    S8{"🔀 需要用工具吗？"}
-    S9["8️⃣ 权限检查<br/>这个操作允许吗？"]
-    S10["9️⃣ 执行工具<br/>读文件/改代码/跑命令"]
-    S11["🔟 结果反馈给AI<br/>工具结果送回大脑"]
-    S12{"🔀 任务完成了吗？"}
-    S13["1️⃣1️⃣ 最终结果渲染<br/>格式化显示给你"]
-
+    subgraph INPUT_PHASE["📥 输入和准备阶段"]
+        S1["1️⃣ 你打字<br/>输入问题并按回车"]
+        S2["2️⃣ 解析输入<br/>程序识别你输入了什么"]
+        S3{"3️⃣ 判断类型<br/>是斜杠命令还是对话？"}
+        S3A["直接执行命令<br/>不经过AI,立即返回"]
+        S4["4️⃣ 构建说明书<br/>组装AI的系统提示词"]
+        S5["5️⃣ 加载记忆<br/>读取CLAUDE.md和长期记忆"]
+    end
     S1 --> S2 --> S3
-    S3 -->|"快捷命令<br/>如 /help"| S3A
-    S3 -->|"普通对话"| S4
-    S3A --> S13
-    S4 --> S5 --> S6 --> S7 --> S8
-    S8 -->|"不需要"| S13
+    S3 -->|"斜杠命令"| S3A
+    S3 -->|"普通对话"| S4 --> S5
+```
+
+上面是你发出消息后的准备工作。下面是 AI 拿到任务后反复思考和执行的循环过程。
+
+```mermaid
+graph TD
+    subgraph LOOP["🔄 思考-执行循环"]
+        S6["6️⃣ 发给AI<br/>把说明书+你的话发送到服务器"]
+        S7["7️⃣ AI回复<br/>AI流式返回思考结果"]
+        S8{"需要用工具吗？<br/>AI判断是否要操作"}
+        S9["8️⃣ 权限检查<br/>规则+分类器+可能问你"]
+        S10["9️⃣ 执行工具<br/>真正运行读写/命令等"]
+        S11["🔟 结果反馈<br/>把工具结果送回AI"]
+        S12{"完成了吗？<br/>AI判断任务是否结束"}
+    end
+    S6 --> S7 --> S8
     S8 -->|"需要"| S9 --> S10 --> S11 --> S12
     S12 -->|"没完成,继续"| S6
+    S8 -->|"不需要工具"| S13["✅ 显示最终结果<br/>流式输出到你的屏幕"]
     S12 -->|"完成了"| S13
 ```
 
@@ -153,66 +164,42 @@ Claude Code 内置了 40 多种工具，就像一个超级工具箱。这些工�
 
 ```mermaid
 graph TD
-    TITLE["🧰 Claude Code 超级工具箱"]
+    TITLE["🧰 Claude Code 超级工具箱<br/>40多种工具分八大类"]
+    TITLE --> FILE["📁 文件操作（5个）<br/>读/写/编辑/按名搜/按内容搜"]
+    TITLE --> EXEC["💻 命令执行（2个）<br/>Bash终端 + PowerShell"]
+    TITLE --> AGENT["🤖 AI协作（3个）<br/>派子助手/发消息/搜工具"]
+    TITLE --> TASK["📋 任务管理（5个）<br/>创建/查看/更新/输出/停止"]
+    TITLE --> NET["🌐 网络（2个）<br/>搜索网页 + 抓取内容"]
+    TITLE --> ADV["📓 高级（3个）<br/>笔记本/代码分析/技能包"]
+    TITLE --> EXT["🔌 外部扩展（3个）<br/>MCP工具/MCP资源/定时任务"]
+    TITLE --> MODE["📐 模式切换（3个）<br/>规划模式/恢复正常/换目录"]
+```
 
-    subgraph FILE["📁 文件操作（5个工具）"]
-        F1["Read 读文件<br/>文本/图片/PDF"]
-        F2["Write 写文件<br/>创建新文件"]
-        F3["Edit 编辑文件<br/>精确替换内容"]
-        F4["Glob 按名搜索<br/>找到指定文件"]
-        F5["Grep 按内容搜<br/>搜索代码内容"]
+下面列出每一类中最常用的核心工具，帮助你快速了解具体能力。
+
+```mermaid
+graph TD
+    subgraph FILE["📁 文件操作 — 核心工具"]
+        F1["Read 读文件<br/>支持文本/图片/PDF"]
+        F2["Write 写文件<br/>创建或覆盖整个文件"]
+        F3["Edit 编辑文件<br/>精确查找替换,只改需要的部分"]
     end
 
-    subgraph EXEC["💻 命令执行（2个）"]
-        E1["Bash 终端命令<br/>运行任意命令"]
-        E2["PowerShell<br/>Windows专用"]
+    subgraph EXEC["💻 命令执行 — 核心工具"]
+        E1["Bash 终端命令<br/>运行任意Shell命令,支持超时控制"]
+        E2["PowerShell<br/>Windows专用命令执行"]
     end
 
-    subgraph AGENT["🤖 AI协作（3个）"]
-        A1["Agent 派子助手<br/>创建专门分身"]
-        A2["SendMessage<br/>给助手发消息"]
-        A3["ToolSearch<br/>搜索可用工具"]
+    subgraph AGENT["🤖 AI协作 — 核心工具"]
+        A1["Agent 派子助手<br/>创建专门分身,可指定权限范围"]
+        A2["SendMessage<br/>像对讲机一样给子助手发消息"]
     end
 
-    subgraph TASK["📋 任务管理（5个）"]
-        T1["TaskCreate<br/>创建任务"]
-        T2["TaskGet<br/>查看任务状态"]
-        T3["TaskUpdate<br/>更新任务进度"]
-        T4["TaskOutput<br/>查看任务输出"]
-        T5["TaskStop<br/>停止任务"]
+    subgraph NET["🌐 网络 + 高级"]
+        N1["WebSearch 搜索<br/>联网搜索最新信息"]
+        N2["WebFetch 抓取<br/>获取指定URL的网页内容"]
+        D1["NotebookEdit<br/>编辑Jupyter笔记本单元格"]
     end
-
-    subgraph NET["🌐 网络（2个）"]
-        N1["WebSearch<br/>上网搜索"]
-        N2["WebFetch<br/>抓取网页内容"]
-    end
-
-    subgraph ADV["📓 高级（3个）"]
-        D1["NotebookEdit<br/>编辑笔记本"]
-        D2["LSP 代码分析<br/>智能代码理解"]
-        D3["Skill 技能执行<br/>调用技能包"]
-    end
-
-    subgraph EXT["🔌 外部扩展（3个）"]
-        X1["MCP工具<br/>外部工具连接"]
-        X2["MCP资源<br/>外部数据源"]
-        X3["定时任务<br/>定期自动执行"]
-    end
-
-    subgraph MODE["📐 模式切换（3个）"]
-        M1["进入规划模式<br/>只看不改"]
-        M2["退出规划模式<br/>恢复正常"]
-        M3["切换工作区<br/>换个目录干活"]
-    end
-
-    TITLE --- FILE
-    TITLE --- EXEC
-    TITLE --- AGENT
-    TITLE --- TASK
-    TITLE --- NET
-    TITLE --- ADV
-    TITLE --- EXT
-    TITLE --- MODE
 ```
 
 ### 工具的执行流程 — 从决定用到用完
@@ -221,15 +208,12 @@ graph TD
 
 ```mermaid
 graph LR
-    P1["1️⃣ AI决定用工具<br/>大脑觉得需要"]
-    P2["2️⃣ 参数验证<br/>检查输入是否合格"]
-    P3["3️⃣ 前置拦截<br/>钩子检查:允许吗?"]
-    P4["4️⃣ 权限审批<br/>规则/分类器/问你"]
-    P5["5️⃣ 实际执行<br/>真正跑起来"]
-    P6["6️⃣ 后置检查<br/>结果有问题吗?"]
-    P7["✅ 结果返回AI"]
-
-    P1 --> P2 --> P3 --> P4 --> P5 --> P6 --> P7
+    P1["1️⃣ AI决定用工具<br/>大脑觉得需要某个工具"] --> P2["2️⃣ 参数验证<br/>检查输入参数合格吗"]
+    P2 --> P3["3️⃣ 前置拦截<br/>钩子检查:允许执行吗?"]
+    P3 --> P4["4️⃣ 权限审批<br/>规则/分类器/问你"]
+    P4 --> P5["5️⃣ 实际执行<br/>工具真正跑起来"]
+    P5 --> P6["6️⃣ 后置检查<br/>结果有没有问题?"]
+    P6 --> P7["✅ 结果返回AI"]
 ```
 
 **通俗解读：**
@@ -319,24 +303,24 @@ Claude Code 用三种"记忆"来解决这个问题。
 
 ```mermaid
 graph TD
-    subgraph DESK["🖥️ 书桌 — AI的短期记忆（上下文窗口）"]
-        D1["💬 当前对话内容"]
-        D2["📄 工具执行结果"]
-        D3["⚙️ 系统行为指令"]
-        D4["📊 项目环境信息"]
+    subgraph DESK["🖥️ 书桌 — AI的短期记忆"]
+        D1["💬 当前对话内容<br/>你和AI说过的所有话"]
+        D2["📄 工具执行结果<br/>读文件/跑命令的输出"]
+        D3["⚙️ 系统指令<br/>系统提示词和规则"]
+        D4["📊 项目信息<br/>环境变量和项目上下文"]
     end
-
-    DESK --> CLEAN["🧹 桌面快满了？六层清理策略！"]
-
-    subgraph LAYERS["📦 六层渐进式压缩"]
-        L0["第0层：大文件存抽屉<br/>工具返回的大结果<br/>存到磁盘,只留摘要"]
-        L1["第1层：旧对话裁剪<br/>太久远的聊天记录<br/>直接删除"]
-        L2["第2层：微压缩<br/>旧工具结果只保留<br/>标题,删掉细节"]
-        L3["第3层：上下文折叠<br/>早期多轮对话<br/>合并成一段摘要"]
-        L4["第4层：自动压缩<br/>让另一个AI帮忙<br/>总结之前的对话"]
-        L5["第5层：紧急压缩<br/>实在太大了<br/>强制缩减到安全范围"]
-        L0 --> L1 --> L2 --> L3 --> L4 --> L5
+    DESK --> CLEAN["🧹 桌面快满了！<br/>接近上下文窗口上限"]
+    subgraph LIGHT["轻量清理（不用AI参与）"]
+        L0["第0层：大文件存抽屉<br/>工具返回的大结果存磁盘,只留摘要"]
+        L1["第1层：旧对话裁剪<br/>太久远的对话直接删除"]
+        L2["第2层：微压缩<br/>旧的工具结果只保留标题"]
     end
+    subgraph DEEP["深度清理（可能用AI帮忙）"]
+        L3["第3层：上下文折叠<br/>多轮对话合并成一段摘要"]
+        L4["第4层：自动压缩<br/>让AI帮忙总结保留要点"]
+        L5["第5层：紧急压缩<br/>强制缩减到安全token范围"]
+    end
+    CLEAN --> LIGHT --> DEEP
 ```
 
 **通俗解读：** 压缩策略像整理书桌——先把大文件存进抽屉（第0层），再扔掉过期文件（第1层），然后把厚文件换成便签摘要（第2、3层），再让助手帮你写会议纪要替代所有原始记录（第4层），最后实在不行就强制清理（第5层）。
@@ -367,40 +351,35 @@ graph BT
 
 ```mermaid
 graph TD
-    subgraph MEMORY["📒 长期记忆系统 — 笔记本"]
-        INDEX["📇 MEMORY.md 索引<br/>目录页,列出所有记忆"]
-
-        subgraph TYPES["四种记忆类型"]
-            MT1["👤 用户记忆<br/>你的角色和偏好<br/>如:资深数据科学家"]
-            MT2["💡 反馈记忆<br/>你纠正AI的记录<br/>如:别用mock测试"]
-            MT3["📁 项目记忆<br/>项目上下文<br/>如:正在重写认证模块"]
-            MT4["🔗 参考记忆<br/>外部资源链接<br/>如:Grafana面板地址"]
-        end
-
-        INDEX --> TYPES
+    subgraph MEMORY["📒 长期记忆系统 — 四种记忆类型"]
+        INDEX["📇 索引目录<br/>按类型分类,快速检索"]
+        INDEX --> MT1["👤 用户记忆<br/>你的角色和偏好<br/>如:资深数据科学家"]
+        INDEX --> MT2["💡 反馈记忆<br/>你纠正过AI的记录<br/>如:别用mock测试"]
+        INDEX --> MT3["📁 项目记忆<br/>项目的技术上下文<br/>如:用monorepo+pnpm"]
+        INDEX --> MT4["🔗 参考记忆<br/>有用的外部资源链接<br/>如:API文档地址"]
     end
+```
 
-    subgraph LIFECYCLE["🔄 记忆的一生"]
-        LC1["✏️ 创建<br/>你主动说:记住这个<br/>或AI自动提取"]
-        LC2["💾 存储<br/>写入Markdown文件<br/>带YAML描述头"]
-        LC3["🔍 检索<br/>下次对话时<br/>AI智能搜索相关记忆"]
-        LC4["♻️ 更新<br/>记忆过时了<br/>自动标记并更新"]
+下面是记忆从诞生到共享的完整生命周期。
+
+```mermaid
+graph TD
+    subgraph LIFECYCLE["🔄 记忆的一生 — 四个阶段"]
+        LC1["✏️ 创建记忆<br/>对话中发现值得记住的信息"]
+        LC2["💾 存储记忆<br/>写入本地JSON文件持久保存"]
+        LC3["🔍 检索记忆<br/>新对话开始时按相关性查找"]
+        LC4["♻️ 更新记忆<br/>过时的自动替换,重复的合并"]
         LC1 --> LC2 --> LC3 --> LC4
     end
 
-    subgraph AUTO["🤖 自动提取机制"]
-        AE1["每轮对话结束后<br/>后台子助手分析"]
-        AE2["用AI判断是否有<br/>值得长期记住的信息"]
-        AE3["自动写入记忆文件<br/>并更新索引"]
-        AE1 --> AE2 --> AE3
+    subgraph AUTO_TEAM["🤖 自动化与团队共享"]
+        AE["🔄 自动提取<br/>每轮对话结束后,AI分析并提取记忆"]
+        TM["👥 团队共享<br/>个人记忆可推送到服务器供团队使用"]
+        SYNC["☁️ 服务器同步<br/>多设备间保持记忆一致"]
+        AE --> TM --> SYNC
     end
 
-    subgraph TEAM["👥 团队共享记忆"]
-        TM1["个人记忆<br/>只有你能看"]
-        TM2["团队记忆<br/>同事也能看"]
-        TM3["服务器同步<br/>推送和拉取"]
-        TM1 --- TM2 --- TM3
-    end
+    LIFECYCLE --> AUTO_TEAM
 ```
 
 **通俗解读：**
@@ -419,16 +398,16 @@ Claude Code 操作的是你的真实文件和代码，安全至关重要。它�
 ### 第1层：权限模式 — 门卫决定谁能进
 
 ```mermaid
-graph LR
-    subgraph MODES["🚪 六种权限模式（从严到松）"]
-        PM1["🔒 plan 规划模式<br/>最严格:只看不改<br/>适合先看看情况"]
-        PM2["🛡️ default 默认模式<br/>敏感操作要问你<br/>日常使用推荐"]
-        PM3["✏️ acceptEdits<br/>只有改文件需确认<br/>其他自动放行"]
-        PM4["⚡ auto 自动模式<br/>AI自己判断安全性<br/>用分类器审批"]
-        PM5["🔓 bypassPermissions<br/>几乎全部跳过<br/>高度信任时用"]
-        PM6["⏭️ dontAsk<br/>从不弹出确认<br/>危险:完全信任AI"]
-        PM1 --> PM2 --> PM3 --> PM4 --> PM5 --> PM6
-    end
+graph TD
+    PM1["🔒 规划模式<br/>最严格:只能看不能改<br/>适合先看看情况再决定"]
+    PM2["🛡️ 默认模式<br/>敏感操作每次都要问你<br/>日常使用最推荐的模式"]
+    PM3["✏️ 只审编辑<br/>修改文件时需要你确认<br/>其他操作自动放行"]
+    PM4["⚡ 自动模式<br/>AI自己用分类器判断安全性<br/>大部分操作自动通过"]
+    PM5["🔓 跳过权限<br/>几乎所有权限检查都跳过<br/>高度信任AI时使用"]
+    PM6["⏭️ 从不询问<br/>永远不弹出确认对话框<br/>完全信任AI的判断"]
+    PM1 -->|"放松"| PM2 -->|"放松"| PM3
+    PM3 -->|"放松"| PM4 -->|"放松"| PM5
+    PM5 -->|"放松"| PM6
 ```
 
 ### 第2层：规则系统 — 白名单和黑名单
@@ -458,24 +437,23 @@ graph TD
 「钩子」（Hook）就像在 AI 每个动作的前后安装了探测器，可以在关键操作前后自动触发检查。
 
 ```mermaid
-graph LR
-    subgraph HOOKS["🪝 钩子系统 — 27种事件可拦截"]
-        H1["AI要用工具前<br/>PreToolUse"]
-        H2["AI用完工具后<br/>PostToolUse"]
-        H3["AI停止思考时<br/>Stop"]
-        H4["会话开始时<br/>SessionStart"]
-        H5["会话结束时<br/>SessionEnd"]
-        H6["文件被修改时<br/>FileChanged"]
-        H7["收到通知时<br/>Notification"]
-        H8["... 还有20种"]
+graph TD
+    subgraph HOOKS["🪝 27种事件可拦截"]
+        H1["AI要用工具前 PreToolUse<br/>在执行前拦截检查"]
+        H2["AI用完工具后 PostToolUse<br/>在执行后审查结果"]
+        H3["AI停止思考时 Stop<br/>决定是否真的结束"]
+        H4["会话开始/结束<br/>SessionStart/SessionEnd"]
+        H5["文件被修改时<br/>FileModified事件"]
+        H6["收到通知时<br/>Notification事件"]
+        H7["... 还有20多种<br/>覆盖AI行为的方方面面"]
     end
-
     subgraph TYPES["四种钩子类型"]
-        HT1["💻 命令型<br/>运行一个脚本"]
-        HT2["📝 提示型<br/>让AI看一段话"]
-        HT3["🌐 网络型<br/>调用一个网址"]
-        HT4["🤖 代理型<br/>启动一个子AI"]
+        HT1["💻 命令型<br/>运行一个本地脚本"]
+        HT2["📝 提示型<br/>让AI阅读一段提示文字"]
+        HT3["🌐 网络型<br/>调用一个HTTP网址"]
+        HT4["🤖 代理型<br/>启动一个子AI来处理"]
     end
+    HOOKS --> TYPES
 ```
 
 ### 第4层：沙箱隔离 — 给 AI 画一个活动圈
@@ -506,61 +484,30 @@ graph TD
 
 ```mermaid
 graph TD
-    subgraph MODES_AGENT["👥 四种协作模式"]
-        subgraph M1["🧑 单人模式"]
-            SOLO["一个AI处理所有事<br/>适合简单任务"]
-        end
-
-        subgraph M2["👨‍👦 主从模式"]
-            MAIN["👔 主AI<br/>接你的需求"]
-            SUB1["🔍 调研员<br/>只看不改"]
-            SUB2["📋 规划师<br/>只出方案"]
-            SUB3["🔧 通用工人<br/>什么都能做"]
-            SUB4["✅ 质检员<br/>检查别人的活"]
-            MAIN --> SUB1
-            MAIN --> SUB2
-            MAIN --> SUB3
-            MAIN --> SUB4
-        end
-
-        subgraph M3["👔 团队调度模式"]
-            BOSS["👔 主管AI<br/>只调度不干活"]
-            W1["🔧 工人1 研究"]
-            W2["🔧 工人2 实施"]
-            W3["🔧 工人3 验证"]
-            W4["🔧 工人4 研究"]
-            BOSS --> W1
-            BOSS --> W2
-            BOSS --> W3
-            BOSS --> W4
-        end
-
-        subgraph M4["🐝 蜂群模式"]
-            BEE1["🐝 AI成员A<br/>负责模块A"]
-            BEE2["🐝 AI成员B<br/>负责模块B"]
-            BEE3["🐝 AI成员C<br/>负责模块C"]
-            BEE1 <-->|"互相发消息"| BEE2
-            BEE2 <-->|"共享文件"| BEE3
-            BEE1 <-->|"广播通知"| BEE3
-        end
-    end
+    TITLE_M["👥 四种协作模式 — 组织架构"]
+    TITLE_M --> SOLO["🧑 单人模式<br/>一个AI处理所有事<br/>适合简单任务"]
+    TITLE_M --> MASTER["👨‍👦 主从模式<br/>主AI派出专门分身<br/>调研员/规划师/工人/质检员"]
+    TITLE_M --> DISPATCH["👔 团队调度模式<br/>主管AI只调度不干活<br/>多个工人AI并行执行"]
+    TITLE_M --> SWARM["🐝 蜂群模式<br/>多个AI各负责一块<br/>互相发消息和共享文件"]
 ```
 
-### 7.2 团队的通信方式和隔离级别
+下面是 AI 团队成员之间如何沟通，以及不同的隔离级别如何防止互相干扰。
 
 ```mermaid
 graph TD
     subgraph COMM["📡 三种沟通方式"]
-        CM1["📨 任务通知<br/>干完活自动报告"]
-        CM2["📻 发消息工具<br/>像用对讲机沟通"]
-        CM3["📄 共享便签板<br/>像白板一样协作"]
+        CM1["📨 任务通知<br/>子AI干完活自动报告结果给主AI"]
+        CM2["📻 发消息工具<br/>像用对讲机一样,AI之间实时沟通"]
+        CM3["📄 共享便签板<br/>通过文件系统像白板一样协作"]
     end
 
     subgraph ISOLATION["🏗️ 三种隔离级别"]
-        IS1["📁 共享目录<br/>小任务:同一文件夹"]
-        IS2["🌿 独立副本<br/>大任务:各有代码副本"]
-        IS3["☁️ 远程环境<br/>最高隔离:云端独立"]
+        IS1["📁 共享目录<br/>小任务:所有AI在同一文件夹工作"]
+        IS2["🌿 独立副本 git worktree<br/>大任务:每个AI有自己的代码副本"]
+        IS3["☁️ 远程环境<br/>最高隔离:AI在云端独立容器运行"]
     end
+
+    COMM --> ISOLATION
 ```
 
 **通俗解读：**
@@ -576,21 +523,16 @@ graph TD
 Claude Code 的配置就像穿衣服——一层套一层，外面的会遮住里面的。
 
 ```mermaid
-graph BT
-    subgraph CONFIG_SYS["👔 六层配置系统（越外层优先级越高）"]
-        CL0["🩲 第0层：插件默认<br/>插件提供的基础设置<br/>最低优先级"]
-        CL1["🩳 第1层：个人设置<br/>~/.claude/settings.json<br/>你的全局偏好"]
-        CL2["👕 第2层：项目设置<br/>.claude/settings.json<br/>团队共享的项目配置"]
-        CL3["🧶 第3层：本地设置<br/>.claude/settings.local.json<br/>你的本地私有偏好"]
-        CL4["🧥 第4层：命令行参数<br/>启动时临时指定<br/>只对这次生效"]
-        CL5["🌧️ 第5层：企业策略<br/>IT管理员统一下发<br/>最高优先级,谁都盖不过"]
-
-        CL0 -->|"被覆盖"| CL1
-        CL1 -->|"被覆盖"| CL2
-        CL2 -->|"被覆盖"| CL3
-        CL3 -->|"被覆盖"| CL4
-        CL4 -->|"被覆盖"| CL5
-    end
+graph TD
+    CL0["🩲 第0层：插件默认<br/>插件提供的基础设置"]
+    CL1["🩳 第1层：个人设置<br/>~/.claude/settings.json"]
+    CL2["👕 第2层：项目设置<br/>.claude/settings.json"]
+    CL3["🧶 第3层：本地设置<br/>.claude/settings.local.json"]
+    CL4["🧥 第4层：命令行参数<br/>启动时临时指定的参数"]
+    CL5["🌧️ 第5层：企业策略<br/>IT管理员统一下发<br/>最高优先级,不可覆盖"]
+    CL0 -->|"被覆盖"| CL1 -->|"被覆盖"| CL2
+    CL2 -->|"被覆盖"| CL3 -->|"被覆盖"| CL4
+    CL4 -->|"被覆盖"| CL5
 ```
 
 ### 每一层能配什么
@@ -639,56 +581,26 @@ Claude Code 不是一个封闭的工具，它像智能手机一样有自己的"�
 
 ```mermaid
 graph TD
-    subgraph ECOSYSTEM["📱 Claude Code 的扩展生态"]
-        subgraph BUILTIN["📦 内置工具 — 出厂自带"]
-            BI1["40多种核心工具<br/>文件/命令/搜索<br/>网络/AI协作/任务"]
-        end
+    TITLE["📱 Claude Code 扩展生态<br/>五大类能力来源"]
+    TITLE --> BI["📦 内置工具（40多种）<br/>出厂自带,覆盖文件/命令/搜索等"]
+    TITLE --> SK["⚡ 技能包 Skill<br/>来源:本地定义/插件附带/官方捆绑<br/>像学会一个新快捷操作"]
+    TITLE --> PL["🧩 插件 Plugin<br/>从市场安装,企业可管控<br/>第三方开发的完整扩展"]
+    TITLE --> MC["🔌 MCP协议<br/>标准化接口连接外部服务<br/>理论上可接入无限工具"]
+    TITLE --> SCH["⏰ 定时任务 Schedule<br/>按cron时间表自动执行<br/>不需要你在线"]
+```
 
-        subgraph SKILLS["⚡ 技能包 — 可学的新能力"]
-            SK_SRC["三种来源"]
-            SK1["📂 本地文件技能<br/>从磁盘加载"]
-            SK2["🧩 插件技能<br/>插件附带的"]
-            SK3["📦 官方捆绑<br/>内置的斜杠命令"]
-            SK_SRC --> SK1
-            SK_SRC --> SK2
-            SK_SRC --> SK3
-        end
+下面展示 MCP 协议支持的七种连接方式，覆盖从简单到复杂的各种场景。
 
-        subgraph PLUGINS["🧩 插件 — 第三方扩展"]
-            PL1["从市场安装"]
-            PL2["可带工具/命令/配置"]
-            PL3["有完善的错误处理"]
-            PL4["企业可管控白名单"]
-        end
-
-        subgraph MCP_SYS["🔌 MCP协议 — 外部工具连接器"]
-            MCP_DESC["像USB接口一样<br/>连接各种外部服务"]
-            MCP1["stdio 标准输入输出"]
-            MCP2["SSE 服务器推送"]
-            MCP3["HTTP 流式传输"]
-            MCP4["npx 自动安装运行"]
-            MCP5["Docker 容器运行"]
-            MCP6["node 直接运行"]
-            MCP7["bun 快速运行"]
-            MCP_DESC --> MCP1
-            MCP_DESC --> MCP2
-            MCP_DESC --> MCP3
-            MCP_DESC --> MCP4
-            MCP_DESC --> MCP5
-            MCP_DESC --> MCP6
-            MCP_DESC --> MCP7
-        end
-
-        subgraph SCHEDULE["⏰ 定时任务"]
-            SCH1["按时间表<br/>自动执行任务"]
-            SCH2["远程运行<br/>不需要你在线"]
-        end
-
-        BUILTIN --> SKILLS
-        SKILLS --> PLUGINS
-        PLUGINS --> MCP_SYS
-        MCP_SYS --> SCHEDULE
-    end
+```mermaid
+graph TD
+    MCP_TITLE["🔌 MCP 七种连接方式"]
+    MCP_TITLE --> S1["📟 stdio 标准输入输出<br/>最简单:通过命令行管道通信"]
+    MCP_TITLE --> S2["📡 SSE 服务器推送事件<br/>长连接:服务器主动推送数据"]
+    MCP_TITLE --> S3["🌐 HTTP 流式传输<br/>通用:标准HTTP请求响应"]
+    MCP_TITLE --> S4["📦 npx 一键启动<br/>自动下载npm包并运行"]
+    MCP_TITLE --> S5["🐳 Docker 容器化<br/>在隔离容器中运行MCP服务"]
+    MCP_TITLE --> S6["🟢 node 直接运行<br/>用Node.js直接执行脚本"]
+    MCP_TITLE --> S7["🍞 bun 快速运行<br/>用Bun运行时执行脚本"]
 ```
 
 **通俗解读：**
@@ -706,35 +618,39 @@ MCP 支持七种连接方式，从简单的命令行管道到复杂的 Docker �
 
 ```mermaid
 graph TD
-    subgraph BOOT["🚀 启动阶段"]
-        B1["1️⃣ 你输入 claude<br/>程序开始运行"]
-        B2["2️⃣ 快速检查<br/>版本号?快捷参数?"]
-        B3["3️⃣ 加载配置<br/>六层配置合并"]
-        B4["4️⃣ 连接网络<br/>检查身份和证书"]
-        B5["5️⃣ 准备工作<br/>加载插件和工具"]
-        B6["6️⃣ 信任确认<br/>首次进入项目要确认"]
-        B7["7️⃣ 读取记忆<br/>加载CLAUDE.md"]
+    subgraph BOOT["🚀 启动阶段 — 七步准备"]
+        B1["1️⃣ 你输入 claude<br/>程序入口开始运行"]
+        B2["2️⃣ 快速检查<br/>是否只是查版本号或快捷参数?"]
+        B3["3️⃣ 加载配置<br/>六层配置文件依次合并"]
+        B4["4️⃣ 连接网络<br/>OAuth身份认证和证书校验"]
+        B5["5️⃣ 准备工作<br/>加载插件、工具箱、MCP连接"]
+        B6["6️⃣ 信任确认<br/>首次进入新项目需要你确认信任"]
+        B7["7️⃣ 读取记忆<br/>加载CLAUDE.md和长期记忆"]
         B1 --> B2 --> B3 --> B4 --> B5 --> B6 --> B7
     end
+```
 
+启动完成后进入对话循环，直到你主动退出或关闭窗口。
+
+```mermaid
+graph TD
     subgraph RUN["🔄 运行阶段 — 对话循环"]
-        R1["显示欢迎界面<br/>首次使用有引导"]
-        R2["等你说话<br/>光标闪烁等输入"]
-        R3["AI思考和执行<br/>思考循环运转"]
-        R4["显示结果<br/>流式输出到屏幕"]
-        R2 --> R3 --> R4 -->|"等待下一句"| R2
+        R1["显示欢迎界面<br/>首次使用会有新手引导"]
+        R2["等你说话<br/>光标闪烁,等待你的输入"]
+        R3["AI思考和执行<br/>思考循环运转,可能多次用工具"]
+        R4["显示结果<br/>流式输出到你的屏幕"]
+        R1 --> R2 --> R3 --> R4 -->|"等待下一句话"| R2
     end
 
-    subgraph SHUTDOWN["🛑 关闭阶段"]
-        E1["你说退出<br/>或关闭窗口"]
-        E2["保存对话历史<br/>写入本地文件"]
-        E3["提取记忆<br/>后台分析值得记住的"]
-        E4["团队记忆同步<br/>推送到服务器"]
-        E5["清理资源<br/>关闭连接和进程"]
+    subgraph SHUTDOWN["🛑 关闭阶段 — 五步收尾"]
+        E1["你说退出<br/>输入exit或按Ctrl+C"]
+        E2["保存对话历史<br/>完整对话写入本地JSON文件"]
+        E3["提取记忆<br/>后台AI分析哪些值得长期记住"]
+        E4["团队记忆同步<br/>把新记忆推送到服务器共享"]
+        E5["清理资源<br/>关闭MCP连接和子进程"]
         E1 --> E2 --> E3 --> E4 --> E5
     end
 
-    B7 --> R1 --> R2
     R2 -->|"输入 exit 或 Ctrl+C"| E1
 ```
 
@@ -743,12 +659,10 @@ graph TD
 Claude Code 的启动经过精心优化，很多步骤是同时进行的，就像一个高效的厨房——洗菜、烧水、预热烤箱同时开始：
 
 ```mermaid
-graph LR
-    subgraph PARALLEL["⚡ 并行启动优化"]
-        PA1["模块加载的同时<br/>启动企业设置读取"]
-        PA2["配置解析的同时<br/>显示信任确认框"]
-        PA3["工具加载的同时<br/>预取AI模型信息"]
-        PA4["MCP连接的同时<br/>加载插件"]
+graph TD
+    subgraph PARALLEL["⚡ 并行启动优化 — 同时进行的工作"]
+        PA1["模块加载 + 企业设置读取"] --- PA2["配置解析 + 信任确认"]
+        PA3["工具加载 + 预取模型信息"] --- PA4["MCP连接 + 加载插件"]
     end
 ```
 

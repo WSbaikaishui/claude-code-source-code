@@ -8,35 +8,42 @@
 
 ```mermaid
 graph TD
-    subgraph 文件["📁 文件操作"]
-        F1[读文件]
-        F2[写文件]
-        F3[编辑文件]
+    subgraph 第一行[" "]
+        direction LR
+        subgraph 文件["📁 文件操作"]
+            F1[读文件]
+            F2[写文件]
+            F3[编辑文件]
+        end
+        subgraph 终端["💻 终端命令"]
+            T1[运行 Shell]
+            T2[PowerShell]
+        end
+        subgraph 搜索["🔍 搜索"]
+            S1[按名搜索]
+            S2[按内容搜索]
+        end
     end
-    subgraph 终端["💻 终端命令"]
-        T1[运行 Shell]
-        T2[PowerShell]
+    subgraph 第二行[" "]
+        direction LR
+        subgraph Agent["🤖 子助手"]
+            A1[派遣子Agent]
+            A2[发送消息]
+        end
+        subgraph 网络["🌐 网络"]
+            W1[上网搜索]
+            W2[抓取网页]
+        end
+        subgraph 任务["📋 任务管理"]
+            K1[创建任务]
+            K2[更新进度]
+        end
+        subgraph 扩展["🔌 外部扩展"]
+            E1[MCP 工具]
+            E2[技能工具]
+        end
     end
-    subgraph 搜索["🔍 搜索"]
-        S1[按名搜索]
-        S2[按内容搜索]
-    end
-    subgraph Agent["🤖 子助手"]
-        A1[派遣子Agent]
-        A2[发送消息]
-    end
-    subgraph 网络["🌐 网络"]
-        W1[上网搜索]
-        W2[抓取网页]
-    end
-    subgraph 任务["📋 任务管理"]
-        K1[创建任务]
-        K2[更新进度]
-    end
-    subgraph 扩展["🔌 外部扩展"]
-        E1[MCP 工具]
-        E2[技能工具]
-    end
+    第一行 ~~~ 第二行
 ```
 
 ---
