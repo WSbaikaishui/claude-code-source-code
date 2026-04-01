@@ -162,6 +162,11 @@ wss://api.anthropic.com/v1/sessions/ws/{sessionId}/subscribe?organization_uuid=.
 - `createSyntheticAssistantMessage()` -- 为远程权限请求创建合成 AssistantMessage
 - `createToolStub()` -- 为本地未加载的工具（如远程 MCP 工具）创建最小化 Tool 桩
 
+> 💡 **Agent 开发启示**：远程执行的核心挑战是延迟和断连。Claude Code 的 `RemoteSessionManager` 用 WebSocket 订阅（实时接收）+ HTTP POST 发送（可靠投递）的双通道架构，既保证实时性又保证可靠性。断连后自动重连，消息用序列号去重。
+>
+> **设计要点**：`src/remote/` 的 SDK 消息适配器把远程会话的消息格式统一转换为本地格式，上层完全无感知。
+> **你自己造的时候**：远程执行是高级功能，先把本地做好。如果需要远程，WebSocket + HTTP 双通道是成熟方案。
+
 ---
 
 ## 3. IDE 桥接层 (Remote Control)
@@ -535,6 +540,11 @@ MCP 工具/插件相关的遥测事件记录。
 
 所有遥测提供者在进程退出时使用带超时的 `forceFlush()`（默认 2s，可通过 `CLAUDE_CODE_OTEL_SHUTDOWN_TIMEOUT_MS` 配置）。
 
+> 💡 **Agent 开发启示**：遥测不是可选项。Claude Code 用 OpenTelemetry 收集三种信号：Metrics（API 调用次数/耗时）、Logs（错误和关键事件）、Traces（请求链路追踪）。`src/utils/telemetry/` 在每次 API 调用和工具执行时自动打点。
+>
+> **设计要点**：会话级 Span 追踪让你能看到一次对话中每个步骤的耗时，快速定位性能瓶颈。
+> **你自己造的时候**：至少记录：每次 API 调用的 token 数、耗时、错误码。用 console.log JSON 格式就行，后面再接 OpenTelemetry。
+
 ---
 
 ## 9. Buddy 伴侣系统
@@ -839,3 +849,4 @@ Claude Code CLI 的特殊功能模块展现了以下架构特点：
 5. **通信模式统一：** 远程会话（CCR）、桥接（Remote Control）、服务器模式（Direct Connect）共享 SDKMessage 消息格式和 control_request/control_response 权限协议
 
 6. **内存效率：** 环形缓冲区去重（BoundedUUIDSet）、WeakRef span 管理、懒加载原生模块
+

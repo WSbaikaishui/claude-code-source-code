@@ -240,6 +240,11 @@ type: {{user | feedback | project | reference}}
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
+> 💡 **Agent 开发启示**：Claude Code 的记忆检索不是关键词匹配也不是向量搜索——而是用 Sonnet（小模型）扫描所有记忆文件的 frontmatter 描述，然后选出最多 5 个相关文件读取完整内容。这比向量搜索更灵活（能理解语义上下文），但比全文搜索更高效（只读 frontmatter）。
+>
+> **设计要点**：`src/memdir/` 用文件系统作为存储，每条记忆一个 `.md` 文件（带 YAML frontmatter），MEMORY.md 作为索引（限 200 行）。简单但有效。
+> **你自己造的时候**：记忆存储从文件系统开始（一条记忆一个文件），不需要数据库。检索先用关键词匹配，效果不好再用 LLM 做语义选择。
+
 ---
 
 ### 1.5 记忆检索机制
@@ -634,6 +639,11 @@ class Project {
 - 关闭时 `reAppendSessionMetadata()` — 确保 customTitle/tag 位于文件末尾 64KB 窗口内
 - `readHeadAndTail()` 优化 — 只读取文件头和尾用于元数据提取
 
+> 💡 **Agent 开发启示**：为什么用 JSONL 而不是 SQLite？因为 JSONL 是 append-only（只追加不修改），天然崩溃安全——即使程序中途 crash，已写入的行不会损坏。读取时逐行解析，内存占用恒定。`src/history.ts` 的 JSONL 格式还支持大粘贴内容的 SHA-256 hash 外部存储，避免单行过长。
+>
+> **设计要点**：`src/utils/filePersistence/` 的 Project 类用 100ms 定时器合并写入，避免频繁 I/O。
+> **你自己造的时候**：对话历史用 JSONL 存储（一行一条消息），简单可靠。别用 JSON 数组——文件越来越大时，每次都要读取解析整个文件。
+
 #### 大小保护
 
 ```typescript
@@ -884,3 +894,4 @@ Claude Code 的数据清理是**保守的被动策略**：
 ---
 
 **文档版本:** 基于 Claude Code CLI 源码 commit `3da94d5` 分析
+

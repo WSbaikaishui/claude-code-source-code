@@ -221,6 +221,11 @@ export function settingsMergeCustomizer(objValue: unknown, srcValue: unknown): u
 - `autoMemoryDirectory` 从 `projectSettings` 设置时被忽略
 - `autoMode` 配置排除 `projectSettings` (防止注入分类器规则)
 
+> 💡 **Agent 开发启示**：六层配置（plugin → user → project → local → flags → policy）的优先级设计体现了"安全默认、逐层放开"原则。特别注意 `policySettings` 是最高优先级且不可覆盖——这是为企业场景设计的，防止用户绕过安全策略。
+>
+> **设计要点**：`src/utils/settings/settings.ts` 的安全设计值得学习——`skipDangerousModePermissionPrompt` 等敏感配置刻意排除 `projectSettings` 来源，防止恶意项目通过 `.claude/settings.json` 注入 RCE。
+> **你自己造的时候**：配置至少分 3 层：默认 → 用户 → 项目。敏感配置（如权限模式）不要允许项目级覆盖。
+
 ### 1.5 配置缓存与热重载
 
 ```
@@ -526,6 +531,11 @@ AgentTool.call()
 
 定义在 `src/tools/AgentTool/built-in/` 目录下。
 
+> 💡 **Agent 开发启示**：Claude Code 的子代理全部运行在同一 Node.js 进程内，通过独立的 `query()` 循环、独立的消息历史和工具上下文实现隔离。这比真正的子进程轻量得多——没有 IPC 开销，共享内存，可以直接传递 JavaScript 对象。`src/tools/AgentTool/AgentTool.tsx` 是入口。
+>
+> **设计要点**：进程内 Agent 的代价是内存共享——一个 Agent 改了文件，其他 Agent 立刻能看到。这既是优势（协作方便）也是风险（互相干扰）。
+> **你自己造的时候**：先用进程内方案（最简单）。如果需要隔离，用 git worktree 给每个 Agent 一份代码副本。
+
 ### 2.3 Fork Subagent 机制
 
 Fork 是一种特殊的 Agent 创建方式，子代理完整继承父级的对话上下文:
@@ -572,6 +582,11 @@ Fork 子代理的指令格式 (`buildChildMessage`):
 <fork-directive>具体任务指令...</fork-directive>
 ```
 
+> 💡 **Agent 开发启示**：Fork 是 Claude Code 最精妙的 Agent 设计之一——子代理继承父级完整上下文，但通过统一所有 `tool_result` 为相同占位文本、只让最后一个 directive 不同，确保多个 Fork 共享 API 的 Prompt Cache。这意味着 Fork 10 个子代理，只有第一个付全价，后面 9 个几乎免费。
+>
+> **设计要点**：`src/tools/AgentTool/forkSubagent.ts` 里的 cache-identical prefix 策略本质上是在利用 Anthropic API 的 prompt caching 机制做成本优化。
+> **你自己造的时候**：如果你用 Anthropic API，fork 子代理时保持 messages 前缀一致就能享受 cache 折扣。不要给每个子代理设不同的 model，否则 cache 失效。
+
 ### 2.4 Coordinator 模式
 
 文件: `src/coordinator/coordinatorMode.ts`
@@ -613,6 +628,11 @@ Coordinator 模式将主 Agent 转变为纯调度者:
 - Worker 工具: Bash, Read, Edit, Write, Glob, Grep, Agent, SendMessage, Skill 等
 - Coordinator 工具: Agent, SendMessage, TaskStop, subscribe_pr_activity 等
 - Coordinator 不直接执行 Bash/Read/Write 等工具
+
+> 💡 **Agent 开发启示**：Coordinator 模式下，Leader Agent 被**剥夺了所有实际工具**，只剩 Agent/SendMessage/TaskStop 三个调度工具。这个约束是故意的——防止 Leader 自己动手干活而不分配给 Worker。Worker 通过 `<task-notification>` XML 异步报告结果。
+>
+> **设计要点**：这是"关注点分离"的极致应用——调度和执行完全分开。Leader 的 system prompt 包含详细的工作流指引（合成-实施-验证），引导它正确分配任务。
+> **你自己造的时候**：Coordinator 适合"分析 + 实施 + 验证"这类有明确阶段的大任务。小任务用子代理就够了。
 
 ### 2.5 SendMessage 工具与 Agent 间通信
 
@@ -858,3 +878,4 @@ type TeammateIdentity = {
 | `src/utils/swarm/backends/types.ts` | 后端类型定义 (PaneBackend, TeammateExecutor) |
 | `src/utils/swarm/teamHelpers.ts` | Team 文件操作辅助 |
 | `src/utils/swarm/teammateMailbox.ts` | 文件信箱通信 |
+

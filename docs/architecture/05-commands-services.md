@@ -164,6 +164,11 @@ export function findCommand(commandName: string, commands: Command[]): Command |
 - `REMOTE_SAFE_COMMANDS`（第 619-637 行）：在 `--remote` 模式下安全的命令（仅影响本地 TUI 状态）
 - `BRIDGE_SAFE_COMMANDS`（第 651-660 行）：可通过远程控制桥（移动端/Web）执行的命令
 
+> 💡 **Agent 开发启示**：Claude Code 的命令系统不只是"解析 /help"这么简单。`src/commands.ts` 的 `getCommands()` 并行加载 6 种来源（内置、技能目录、插件、工作流、MCP、捆绑技能），然后用 `meetsAvailabilityRequirement()` 动态过滤。这让命令系统成为了一个可扩展的生态入口。
+>
+> **设计要点**：命令分三种执行模式：`prompt`（生成 prompt 发给 AI）、`local`（本地直接执行）、`local-jsx`（渲染 UI 组件）。最常用的是 `prompt` 类型——它不是直接执行，而是生成一段 prompt 让 AI 来处理。
+> **你自己造的时候**：斜杠命令是极好的用户交互方式。至少实现 `/help`、`/clear`、`/exit`。命令用 `{name, description, execute}` 三字段就够了。
+
 ---
 
 ## 3. 命令的生命周期
@@ -574,6 +579,11 @@ getAnthropicClient()
 - `should1hCacheTTL()` — 是否使用 1 小时长缓存 TTL
 - `promptCacheBreakDetection.ts` — 检测缓存失效
 
+> 💡 **Agent 开发启示**：`src/services/api/` 支持 5 种 API 后端（Anthropic 直连、AWS Bedrock、Azure Foundry、GCP Vertex、Claude.ai），通过工厂函数 `createApiClient()` 统一接口。每个后端的认证、端点、请求格式都不同，但对上层来说是透明的。
+>
+> **设计要点**：重试策略值得学习——API 超时或 5xx 错误时自动重试，429 时指数退避，但 4xx 客户端错误不重试。流式模式下用 SSE 逐 token 接收。
+> **你自己造的时候**：先只支持一个 API（Anthropic SDK 最简单）。但从第一天就用接口抽象 `{stream, complete}`，方便以后换后端。一定要加重试和超时。
+
 ---
 
 ## 7. MCP 协议服务
@@ -865,3 +875,4 @@ API 服务实现了多层容错：
 | 记忆提取 | `src/services/extractMemories/extractMemories.ts` | ~500+ |
 | LSP 管理 | `src/services/lsp/manager.ts` + `LSPServerManager.ts` | ~200+ |
 | 设置同步 | `src/services/settingsSync/index.ts` | ~200+ |
+

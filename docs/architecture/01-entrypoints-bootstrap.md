@@ -166,6 +166,11 @@ main.tsx::run()                        [阶段 3: Commander 命令解析]
   |     |     |-- await gracefulShutdown(0)
 ```
 
+> 💡 **Agent 开发启示**：Claude Code 的启动分成 `init()`（全局一次性）和 `setup()`（每次会话），用 memoize 确保 init 只跑一次。`src/entrypoints/cli.tsx` 的快速路径分发让 `--version` 这种命令在 init 之前就返回，避免无谓的初始化开销。
+>
+> **设计要点**：启动性能直接影响用户体验。Claude Code 在模块加载阶段就并行启动 MDM 和 Keychain 子进程，`setup()` 与工具加载并行。
+> **你自己造的时候**：Agent 启动也要分阶段——先解析参数，再初始化配置，最后加载工具和插件。能并行的就并行。
+
 ---
 
 ## 3. 入口点详解
@@ -252,6 +257,11 @@ cli.tsx::main()
 | Daemon Worker | `cli.tsx` -> `daemon/workerRegistry.js` | 精简(无 enableConfigs) | 后台 worker 进程 |
 | Bridge/Remote Control | `cli.tsx` -> `bridge/bridgeMain.js` | 中等(enableConfigs + OAuth) | 远程控制桥接 |
 | Environment Runner | `cli.tsx` -> `environment-runner/main.js` | 精简 | BYOC 无头运行器 |
+
+> 💡 **Agent 开发启示**：Claude Code 从设计上就支持多入口——CLI、MCP Server、Agent SDK、Bridge（IDE集成）共享同一个核心引擎。`src/entrypoints/` 下每个入口只做薄薄的适配层，真正的逻辑在 `src/query.ts`。这种"一个引擎多个壳"的模式让你的 Agent 可以同时服务终端、API、IDE 等多个场景。
+>
+> **设计要点**：入口层只负责 I/O 适配（stdin/stdout、HTTP、WebSocket），不包含业务逻辑。
+> **你自己造的时候**：从 CLI 入口开始，但把核心循环设计成纯函数（输入消息列表，输出响应），这样以后加 HTTP API 或 SDK 接口时不用改核心代码。
 
 ---
 
@@ -681,3 +691,4 @@ export async function renderAndRun(root, element) {
 ---
 
 > 本文档基于 Claude Code v2.1.88 反编译源码分析,代码路径均相对于项目根目录 `/Users/mozes/workspace/claude-code-source-code`。
+

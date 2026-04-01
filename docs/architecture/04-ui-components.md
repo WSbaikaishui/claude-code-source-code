@@ -139,6 +139,11 @@ renderer({ frontFrame, backFrame, terminalWidth, terminalRows, altScreen })
 - **布局偏移检测**: `layoutShifted` 标志跟踪节点位置/尺寸变化，稳态帧走窄损伤路径
 - **硬件滚动提示**: `ScrollHint` 允许使用 DECSTBM + SU/SD 硬件滚动指令
 
+> 💡 **Agent 开发启示**：Claude Code 为什么自己写渲染引擎而不用现成的？因为终端 Agent 需要：流式输出（逐字显示 AI 回复）、虚拟滚动（几千行对话不能全部渲染）、内联权限对话框（在输出中间弹出确认）。这些需求组合在一起，没有现成方案能满足。
+>
+> **设计要点**：`src/ink/` 基于 `react-reconciler` 自定义了 DOM 树 → Yoga 布局 → Screen Cell 矩阵 → ANSI 输出 的完整管线。双缓冲帧渲染 + 16ms 节流确保不闪烁。
+> **你自己造的时候**：你**不需要**自己写渲染引擎。用 Ink 或者直接 console.log 流式输出就够了。关键是支持流式显示（边生成边输出）和进度指示。
+
 ---
 
 ## 2. 自定义 Ink 框架的实现与改进
@@ -572,6 +577,11 @@ RENDER_CACHE (WeakMap, 按 patch 对象缓存)
 - `RENDER_CACHE` 使用 `WeakMap<StructuredPatchHunk, ...>` 缓存渲染结果，ctrl+o 转录视图切换时零成本重挂载
 - Gutter (行号列) 标记为 `NoSelect`，复制代码时不包含行号
 
+> 💡 **Agent 开发启示**：消息渲染不是 `console.log(text)` 这么简单。Claude Code 的渲染管线处理：Markdown → 代码高亮 → Diff 着色 → 工具调用展示 → 权限提示 → 进度条。`src/components/messages/` 根据消息类型分发到不同的渲染器。
+>
+> **设计要点**：虚拟滚动（`useVirtualScroll`）是长对话的关键——只渲染可见区域的消息，过扫描 80 行确保滚动流畅。
+> **你自己造的时候**：至少实现：流式文本输出 + 工具调用状态显示（调用中/完成/失败）+ 代码块高亮。用 `marked` + `chalk` 就够了。
+
 ---
 
 ## 5. 用户输入处理流程
@@ -914,3 +924,4 @@ Bottom (输入区)           ← 保持可见
 | 快捷键上下文 | `src/keybindings/KeybindingContext.tsx` |
 | 滚动处理 | `src/components/ScrollKeybindingHandler.tsx` |
 | 输出样式 | `src/outputStyles/loadOutputStylesDir.ts` |
+

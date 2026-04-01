@@ -184,6 +184,11 @@ export function buildTool<D extends AnyToolDef>(def: D): BuiltTool<D> {
 - **ToolDef 简化定义**：`ToolDef` 类型让 `isEnabled`、`checkPermissions` 等方法可选，降低样板代码
 - **类型安全**：`BuiltTool<D>` 精确推断出运行时 spread 后的类型
 
+> 💡 **Agent 开发启示**：Claude Code 不用类继承定义工具，而是用 `buildTool()` 工厂函数 + 对象字面量。这样做的好处是 fail-closed——任何你没显式设置的字段都有安全的默认值（如 `isReadOnly: false`、`userFacingName()` 默认返回工具名）。`src/Tool.ts` 的 Tool 类型有 60+ 个字段，但你只需要填 5-6 个核心的。
+>
+> **设计要点**：组合优于继承。对象字面量让每个工具的定义一目了然，不需要去父类找行为。
+> **你自己造的时候**：先定义最小 Tool 接口：`{name, description, inputSchema, call}`。用 Zod 做 inputSchema，别手写 JSON Schema。
+
 ### 2.3 ToolUseContext -- 执行上下文
 
 `ToolUseContext` 是工具执行时传入的上下文对象，携带了几乎所有运行时状态：
@@ -318,6 +323,11 @@ export function assembleToolPool(
 - 内置工具排在前面（prompt cache 稳定性）
 - `uniqBy('name')` 确保内置工具同名优先（MCP 工具不能覆盖内置工具，除非在 SDK 无前缀模式）
 
+> 💡 **Agent 开发启示**：三层注册机制（静态导入 → feature gate 条件编译 → 延迟 require）解决了三个现实问题：核心工具保证可用、实验工具可热切换、大型工具不拖慢启动。`src/tools.ts` 的 `getAllBaseTools()` 把这三层拼在一起，`getTools()` 再根据当前会话过滤。
+>
+> **设计要点**：`ToolSearch` 延迟加载机制值得学习——当工具超过 ~30 个时，不把所有 schema 都塞给 LLM，而是让 LLM 先搜索再按需加载。这省了大量 token。
+> **你自己造的时候**：一开始硬编码工具列表就行。工具超过 10 个时考虑分组，超过 30 个时考虑延迟加载。
+
 ---
 
 ## 4. 工具执行流程
@@ -370,6 +380,11 @@ function partitionToolCalls(toolUseMessages, toolUseContext): Batch[] {
 - **并发批次**：通过 `all()` 生成器并发执行，最大并发数默认 10（`CLAUDE_CODE_MAX_TOOL_USE_CONCURRENCY`）
 - **串行批次**：逐个执行，每个工具完成后更新上下文
 - `contextModifier` 在批次结束后统一应用，保证上下文一致性
+
+> 💡 **Agent 开发启示**：`src/services/tools/toolOrchestration.ts` 的 `partitionToolCalls()` 自动将连续的只读工具合并为并行批次，遇到写操作就切换为串行。这意味着 LLM 一次返回 5 个 `tool_use`（比如 3 个读文件 + 1 个写文件 + 1 个读文件），系统会自动分成 3 批：[并行读3个] → [串行写1个] → [串行读1个]。
+>
+> **设计要点**：每个 Tool 有 `isReadOnly` 标记。只读标记不只是文档——它直接影响执行策略。
+> **你自己造的时候**：一开始串行执行所有工具就行。当性能成为瓶颈时，给工具加 `isReadOnly` 标记，只读工具并行执行。
 
 ### 4.3 流式执行器 -- StreamingToolExecutor
 
@@ -438,6 +453,11 @@ const mappedToolResultBlock = tool.mapToolResultToToolResultBlockParam(result.da
 // 大结果自动存盘（超过 maxResultSizeChars 时）
 const processed = await processToolResultBlock(tool, result.data, toolUseID)
 ```
+
+> 💡 **Agent 开发启示**：这个 11 步流水线是工具系统的灵魂——`src/services/tools/toolExecution.ts`（约 1500 行）。关键观察：权限检查发生在实际执行**之前**，结果处理发生在执行**之后**，形成一个 pre-check → execute → post-check 的三明治结构。任何一步失败都会产生安全的错误结果而不是 crash。
+>
+> **设计要点**：流水线设计让你可以在任意步骤插入横切关注点（日志、遥测、权限、Hook），而不用修改工具本身的代码。
+> **你自己造的时候**：至少实现 3 步：`validateInput() → checkPermission() → tool.call()`。错误时返回错误消息给 LLM（不要抛异常），让 LLM 自己修正。
 
 ---
 
@@ -518,6 +538,11 @@ CUSTOM_AGENT_DISALLOWED_TOOLS  // 自定义 Agent 禁止使用的工具
 ASYNC_AGENT_ALLOWED_TOOLS      // 异步 Agent 允许的工具
 COORDINATOR_MODE_ALLOWED_TOOLS // Coordinator 模式允许的工具
 ```
+
+> 💡 **Agent 开发启示**：权限不是事后补丁，而是工具系统的一等公民。每个 Tool 都有 `checkPermissions()` 方法，返回 `{allowed, reason}`。系统在 4 个层级检查权限：工具级过滤 → 工具自身检查 → PreToolUse Hook → 统一决策。四层中任意一层说"不"，工具就不会执行。
+>
+> **设计要点**：`src/hooks/toolPermission/` 实现了 ResolveOnce 模式——规则匹配、分类器、用户确认、远程桥接四路竞速，谁先返回用谁的。
+> **你自己造的时候**：**从第一天就加权限检查**。最简实现：一个 `dangerousCommands` 黑名单 + `if (isDangerous) await askUser()`。
 
 ---
 
@@ -639,6 +664,11 @@ SkillTool 将 slash command（如 `/commit`、`/review-pr`）暴露为可被 AI 
 - 支持 MCP 技能/提示
 - 内部使用 `runAgent()` 执行技能（类似子代理）
 - 追踪技能使用记录用于建议和分析
+
+> 💡 **Agent 开发启示**：看看 Claude Code 最常用的 3 个工具怎么实现的——`BashTool` 用子进程执行命令并处理超时/大输出，`FileEditTool` 用精确字符串匹配（不是行号）做编辑以避免 LLM 数行号数错，`AgentTool` 创建一个新的 query() 循环实现子代理。这 3 个工具覆盖了 Agent 80% 的能力。
+>
+> **设计要点**：FileEditTool 用字符串匹配而非行号替换，是因为 LLM 在数行号时经常出错，但定位唯一字符串很准。这种"适应 LLM 特点"的设计在 Agent 开发中非常重要。
+> **你自己造的时候**：先实现这 3 个工具就能覆盖大部分场景。文件编辑用 diff/patch 或字符串替换，不要用行号。
 
 ---
 
@@ -942,3 +972,4 @@ if (resultSize > tool.maxResultSizeChars) {
 5. **延迟加载**：ToolSearch 机制应对大量 MCP 工具场景，减少 prompt token
 6. **fail-closed 默认值**：所有安全相关属性默认保守（不并发、非只读）
 7. **MCP 模板克隆**：单一 MCPTool 模板通过展开覆盖实现多态，避免类继承
+

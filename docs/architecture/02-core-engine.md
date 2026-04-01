@@ -83,6 +83,11 @@ graph LR
 SDKMessage 流式输出 (assistant/user/stream_event/attachment/progress)
 ```
 
+> 💡 **Agent 开发启示**：这张图就是 Agent 的核心骨架——`QueryEngine.submitMessage()` 是总入口，内部的 `query()` 循环是心跳。注意它不是简单的一问一答，而是一个 while-true 循环，每轮都可能调用工具、压缩上下文、继续迭代。
+>
+> **设计要点**：`src/QueryEngine.ts` 用类管理会话生命周期（token 累计、消息历史），`src/query.ts` 专注单次循环逻辑，职责分离。
+> **你自己造的时候**：先实现最简循环（20行），再逐步加上压缩和错误恢复。别一开始就写复杂的。
+
 ### 1.2 关键文件索引
 
 | 文件 | 职责 |
@@ -256,6 +261,21 @@ type State = {
 }
 ```
 
+> 💡 **Agent 开发启示**：`src/query.ts` 用 `while(true)` 而不是递归调用自身。这不是偶然——递归在长对话中会栈溢出（几百轮工具调用很常见）。它用一个显式的 `State` 对象携带所有循环状态（消息列表、token 计数、错误次数），每一轮都是独立的。
+>
+> **设计要点**：显式 State 让循环可以序列化、可以恢复、可以测试。相比之下，递归把状态藏在调用栈里，出了问题很难调试。
+> **你自己造的时候**：```typescript
+> // 最简 Agent 循环骨架
+> async function agentLoop(messages: Message[], tools: Tool[]) {
+>   while (true) {
+>     const response = await callLLM(messages);
+>     if (!response.tool_calls?.length) return response.text;
+>     const results = await executeTools(response.tool_calls, tools);
+>     messages.push(...results);
+>   }
+> }
+> ```
+
 ### 3.4 单次迭代详细流程
 
 ```
@@ -365,6 +385,11 @@ export type QueryDeps = {
 ```
 
 生产环境使用 `productionDeps()`，测试中可注入 mock。
+
+> 💡 **Agent 开发启示**：Claude Code 用 `QueryDeps` 把所有外部依赖（API 客户端、工具列表、配置）注入到 query 函数，而不是用全局变量。这让核心循环可以独立测试——你可以 mock 一个假的 API 客户端来测试循环逻辑，不需要真的调用 Claude API。
+>
+> **设计要点**：依赖注入不是 Java 专利。TypeScript 里用参数对象 `{api, tools, config}` 就够了，不需要 DI 框架。
+> **你自己造的时候**：你的 `agentLoop(deps)` 函数至少要接收 `{callLLM, tools, onMessage}` 三个依赖。
 
 ### 3.8 QueryConfig 快照
 
@@ -521,6 +546,11 @@ isWithheld413 → 先尝试 contextCollapse.recoverFromOverflow()
 
 在关闭自动压缩且没有响应式压缩时，使用 `calculateTokenWarningState()` 检查硬限制，预留空间让用户手动运行 `/compact`。
 
+> 💡 **Agent 开发启示**：上下文管理是 Agent 开发中最容易被忽视、也最难做好的部分。Claude Code 用了 5 层渐进式压缩（从"削减工具结果"到"调用模型总结"），每层成本递增但效果也递增。这不是过度设计——真实使用中，一个复杂任务可能产生几十轮工具调用，不压缩根本跑不完。
+>
+> **设计要点**：`src/services/compact/autoCompact.ts` 的断路器模式值得学习——连续 3 次压缩失败就停止重试，避免无限循环。
+> **你自己造的时候**：先实现最简的：消息总 token 超过阈值就删掉最旧的几轮。能跑起来后再加摘要压缩。
+
 ### 4.5 Token 预算追踪
 
 > 文件：`src/query/tokenBudget.ts`
@@ -602,6 +632,11 @@ export function matchSessionMode(sessionMode) {
   }
 }
 ```
+
+> 💡 **Agent 开发启示**：Coordinator 模式是 Claude Code 的多 Agent 方案——Leader 只有调度工具（Agent/SendMessage/TaskStop），不直接干活，Worker 独立运行各自的 query() 循环。这种 Leader-Worker 分离让系统可以并行处理多个子任务。
+>
+> **设计要点**：注意 Worker 不是操作系统子进程，而是同一进程内的独立 query() 循环。通过独立的消息历史和工具上下文实现隔离，但共享内存和文件系统。
+> **你自己造的时候**：从子代理开始（主 Agent 调用 AgentTool 派出分身），够用就不上 Coordinator。
 
 ---
 
@@ -705,6 +740,11 @@ case 'stream_event':
     this.totalUsage = accumulateUsage(this.totalUsage, currentMessageUsage)
   }
 ```
+
+> 💡 **Agent 开发启示**：`src/cost-tracker.ts` 按模型分别追踪 input/output token 和费用，每轮循环结束后累计。这在生产环境中至关重要——一个失控的 Agent 循环可以在几分钟内烧掉几百美元。
+>
+> **设计要点**：成本追踪和 token 预算是两件事。追踪是记录，预算是限制。Claude Code 两个都做了。
+> **你自己造的时候**：至少记录每次 API 调用的 token 数量，设一个硬性上限（如总 token 不超过 100K），超了就强制停止。
 
 ---
 
@@ -923,3 +963,4 @@ export type ToolUseContext = {
 ### D. 分叉 Agent 上下文传递
 
 Worker/子 Agent 通过 `CacheSafeParams` 继承主线程的完整上下文（system prompt + user context + system context + 消息历史），确保缓存命中率。
+

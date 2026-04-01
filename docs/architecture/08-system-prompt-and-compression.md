@@ -90,6 +90,11 @@ QueryEngine.submitMessage()
         [src/utils/api.ts:437 appendSystemContext()]
 ```
 
+> 💡 **Agent 开发启示**：Claude Code 的 prompt 不是一坨静态文本，而是三层动态注入：`systemPrompt`（system 参数，可缓存）→ `systemContext`（追加到 system 末尾，如 git status）→ `userContext`（注入到 messages[0]，如 CLAUDE.md）。分层是为了 prompt cache——改动频繁的部分放后面，不影响前面的缓存。
+>
+> **设计要点**：`SYSTEM_PROMPT_DYNAMIC_BOUNDARY` 标记把 prompt 分成可缓存的静态前缀和不可缓存的动态后缀。Anthropic API 按前缀匹配做 cache，所以静态部分越长、越稳定，省的钱越多。
+> **你自己造的时候**：System prompt 至少分成 3 块：身份定义（几乎不变）→ 工具和行为规范（偶尔变）→ 动态上下文（每次都变）。不变的放前面。
+
 ### 1.2 System Prompt 完整组成
 
 `getSystemPrompt()` 返回一个字符串数组，每个元素是一个独立的 prompt 段。最终结构分为 **静态部分** 和 **动态部分**，由 `SYSTEM_PROMPT_DYNAMIC_BOUNDARY` 分隔：
@@ -225,6 +230,11 @@ Contents of /project/CLAUDE.md (project instructions, checked into the codebase)
 - `CLAUDE_CODE_DISABLE_CLAUDE_MDS=1` — 完全禁用
 - `--bare` 模式 — 跳过自动发现，但仍尊重 `--add-dir` 显式指定的目录
 - `MAX_MEMORY_CHARACTER_COUNT = 40000` — 单文件推荐上限
+
+> 💡 **Agent 开发启示**：CLAUDE.md 的四层加载（Managed → User → Project → Local）让 Agent 可以在不同层级获得不同的行为指令。最精妙的是 `@include` 指令——它让 CLAUDE.md 可以像代码一样模块化、复用。
+>
+> **设计要点**：项目级 CLAUDE.md 会从 CWD 向上遍历查找，这意味着 monorepo 中不同子目录可以有不同的 CLAUDE.md。
+> **你自己造的时候**：给你的 Agent 加一个项目配置文件（如 `agent.md`），放在项目根目录，让用户可以自定义 Agent 行为。至少支持：项目描述、编码规范、特殊指令。
 
 ### 1.4 动态上下文注入
 
@@ -655,6 +665,11 @@ trySessionMemoryCompaction()
 
 **优势：** 无需模型调用，延迟极低，且保留最近的原始消息。
 
+> 💡 **Agent 开发启示**：6 层压缩策略的核心思想是"渐进式降级"——先做最便宜的操作（截断大结果），再做中等成本的（删旧消息），最后才做最贵的（调用模型总结）。而且 Context Collapse 和 Auto Compact 是互斥的——不会重复压缩。
+>
+> **设计要点**：`src/services/compact/autoCompact.ts` 的断路器模式——连续 3 次压缩失败就停止重试，避免在无法压缩的情况下浪费 API 调用。
+> **你自己造的时候**：先实现第 0-2 层（纯本地操作，不调 API），够用就不要上 autoCompact。压缩的第一原则：工具结果是最大的 token 来源，先砍它们。
+
 ### 2.9 Token 预算管理
 
 #### 关键常量
@@ -733,3 +748,4 @@ calculateTokenWarningState(tokenUsage, model)
 3. **0 模型调用优先** — Snip、Microcompact、Session Memory Compact 均不调用模型，只有 Auto Compact 和 Reactive Compact 需要模型摘要
 4. **断路器保护** — 连续 3 次 autocompact 失败后停止重试
 5. **Post-compact 恢复** — 压缩后自动恢复最近文件、计划、技能、MCP 指令等关键上下文
+

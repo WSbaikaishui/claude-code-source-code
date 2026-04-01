@@ -61,6 +61,11 @@ type Store<T> = {
 - **发布-订阅模式**: 通过 `subscribe` 注册监听器，状态变化时同步通知所有订阅者
 - **onChange 回调**: 创建时可传入 `onChange` 钩子，在状态变化时获取 `{ newState, oldState }`
 
+> 💡 **Agent 开发启示**：Claude Code 没用 Redux/MobX，而是自己写了一个 35 行的 Store。`src/state/store.ts` 只有 `getState/setState/subscribe` 三个方法，用 `Object.is` 跳过无变化更新。对 Agent 应用来说，这种极简状态管理完全够用。
+>
+> **设计要点**：状态更新用 updater 函数 `(prev) => next` 而不是直接赋值，确保不可变性。`DeepImmutable<>` 在类型级别强制不可变。
+> **你自己造的时候**：Agent 状态管理不需要大框架。一个带 subscribe 的对象就够了。关键状态：当前权限模式、活跃任务列表、工具可用性。
+
 ### 1.2 AppState 类型定义
 
 **文件**: `src/state/AppStateStore.ts`
@@ -500,6 +505,11 @@ type HookResult = {
 - 代码编辑工具计数器（按语言分组）
 - `toolUseContext.toolDecisions` 持久化（下游代码可检查）
 
+> 💡 **Agent 开发启示**：Hook 系统是 Claude Code 最强的扩展点——27 种事件 × 4 种 Hook 类型（command/prompt/http/agent）。其中最重要的是 `PreToolUse` 和 `PostToolUse`——它们让你可以在不修改工具代码的情况下注入检查逻辑、修改输入参数、甚至拦截执行。
+>
+> **设计要点**：Hook 可以返回 `updatedInput`（修改工具参数）、`permissionBehavior`（覆盖权限决策）、`preventContinuation`（阻止循环继续）。这三个能力组合起来极其强大。
+> **你自己造的时候**：至少实现 `beforeToolUse` 和 `afterToolUse` 两个 Hook 点。用回调函数数组实现，不需要复杂的事件系统。
+
 ---
 
 ## 4. 权限模型
@@ -642,6 +652,11 @@ Auto 模式的核心——转录分类器。通过 LLM 分析当前对话上下�
 - `addDirectories` / `removeDirectories` — 工作目录增删
 
 更新目标: `userSettings`、`projectSettings`、`localSettings`、`session`、`cliArg`
+
+> 💡 **Agent 开发启示**：6 种权限模式从 `plan`（最严）到 `dontAsk`（最松）形成谱系，但最巧妙的是 `auto` 模式——它用一个分类器（另一个 LLM 调用）自动判断操作是否安全。这比硬编码规则灵活得多，但也增加了延迟和成本。
+>
+> **设计要点**：拒绝追踪机制值得学习——连续 3 次或总计 20 次被用户拒绝后，系统自动回退到交互式提示模式，防止 Agent 反复尝试被禁止的操作。
+> **你自己造的时候**：先实现两种模式：`ask`（每次都问）和 `auto`（只对危险操作问）。危险操作的判断先用规则，后面再考虑分类器。
 
 ---
 
@@ -890,3 +905,4 @@ Run `eslint .` and report results.
 4. **并发权限竞速** — 本地 UI、Hook、分类器、远程桥接多路径竞争
 5. **内存预算管理** — 队友消息上限、任务驱逐、retain/release 模式
 6. **安全纵深防御** — 文件路径规范化、O_NOFOLLOW、危险模式剥离、拒绝追踪回退
+
